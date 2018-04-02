@@ -9,12 +9,12 @@ Supported forwarder,
 
 ## Requirements
 
-* [[ https://golang.org | Go ]] for building from source code
-* [[ https://github.com/alecthomas/gometalinter | gometalinter ]] (optional)
-* [[ https://git-scm.com/ | git ]] for downloading source code
-* [[ https://portal.influxdata.com/downloads | Influxdb ]] for storing
+* [Go](https://golang.org) for building from source code
+* [gometalinter](https://github.com/alecthomas/gometalinter) (optional)
+* [git](https://git-scm.com/) for downloading source code
+* [InfluxDB](https://portal.influxdata.com/downloads) for storing
   HAProxy log.
-* [[ https://portal.influxdata.com/downloads | Chronograf ]] for viewing
+* [Chronograf](https://portal.influxdata.com/downloads) for viewing
   influxdb data with graph.
 
 ## Building
@@ -35,7 +35,9 @@ The binary will be installed on `$GOPATH/bin/haminer`.
 `haminer` by default will load it's config from `/etc/haminer.conf`, if not
 specified when running the program.
 
-See `cmd/haminer/haminer.conf` for an example of possible configuration.
+See
+`[haminer.conf](https://github.com/shuLhan/haminer/blob/master/cmd/haminer/haminer.conf)
+for an example of possible configuration and their explanation.
 
 
 ## Installation
@@ -51,7 +53,7 @@ example,
 ```
 global
 	...
-	log                       127.0.0.1:5140 haminer
+	log                       127.0.0.1:5140 local3
 	...
 ```
 
@@ -64,8 +66,9 @@ Then reload or restart HAProxy.
        > CREATE DATABASE haminer
        > GRANT ALL ON haminer TO haminer
 
-## Running
-
-Run the haminer program manually,
+(5) Run the haminer program manually,
 
 	$ $GOPATH/bin/haminer
+
+or use a
+[systemd service](https://github.com/shuLhan/haminer/blob/master/cmd/haminer/haminer.service).
