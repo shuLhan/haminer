@@ -1,0 +1,11 @@
+[Unit]
+Description=haminer
+After=syslog.target network.target
+
+[Service]
+ExecStart=/usr/local/bin/haminer
+User=centos
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
