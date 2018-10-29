@@ -21,33 +21,44 @@ var (
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
 //
 type Halog struct {
-	Timestamp    time.Time
-	ClientIP     string
-	ClientPort   int32
+	Timestamp time.Time
+
+	ClientIP   string
+	ClientPort int32
+
 	FrontendName string
 	BackendName  string
 	ServerName   string
-	TimeReq      int32
-	TimeWait     int32
-	TimeConnect  int32
-	TimeRsp      int32
-	TimeAll      int32
-	HTTPStatus   int32
-	BytesRead    int64
-	CookieReq    string
-	CookieRsp    string
-	TermState    string
+
+	TimeReq     int32
+	TimeWait    int32
+	TimeConnect int32
+	TimeRsp     int32
+	TimeAll     int32
+
+	BytesRead int64
+
+	CookieReq string
+	CookieRsp string
+
+	TermState string
+
 	ConnActive   int32
 	ConnFrontend int32
 	ConnBackend  int32
 	ConnServer   int32
 	ConnRetries  int32
+
 	QueueServer  int32
 	QueueBackend int32
-	HTTPMethod   string
-	HTTPURL      string
-	HTTPQuery    string
-	HTTPProto    string
+
+	RequestHeaders map[string]string
+
+	HTTPStatus int32
+	HTTPMethod string
+	HTTPURL    string
+	HTTPQuery  string
+	HTTPProto  string
 }
 
 //
@@ -185,6 +196,40 @@ func (halog *Halog) parseQueue(in []byte) (ok bool) {
 	return
 }
 
+//
+// parserRequestHeaders parse the request header values in log file.
+// The request headers start with '{' and end with '}'.
+// Each header is separated by '|'.
+//
+func (halog *Halog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
+	if in[0] != '{' {
+		// Skip if we did not find the beginning.
+		return true
+	}
+
+	end := bytes.IndexByte(in, '}')
+	// Either '}' not found or its empty as in '{}'.
+	if end <= 1 {
+		return
+	}
+
+	sep := []byte{'|'}
+	bheaders := bytes.Split(in[1:end], sep)
+
+	if len(reqHeaders) != len(bheaders) {
+		return
+	}
+
+	halog.RequestHeaders = make(map[string]string)
+	for x, name := range reqHeaders {
+		halog.RequestHeaders[name] = string(bheaders[x])
+	}
+
+	copy(in, in[end+2:])
+
+	return true
+}
+
 func (halog *Halog) parseHTTP(in []byte) (ok bool) {
 	halog.HTTPMethod, ok = parseToString(in, ' ')
 	if !ok {
@@ -209,46 +254,29 @@ func (halog *Halog) parseHTTP(in []byte) (ok bool) {
 //
 // Parse will parse one line of HAProxy log format into Halog.
 //
-// (1) Remove prefix from systemd/rsyslog
-// (2) parse client IP
-// (3) parse client port
-// (4) parse timestamp, remove '[' and parse until ']'
-// (5) parse frontend name
-// (6) parse backend name
-// (7) parse server name
-// (8) parse times
-// (9) parse HTTP status code
-// (10) parse bytes read
-// (11) parse request cookie
-// (12) parse response cookie
-// (13) parse termination state
-// (14) parse number of connections
-// (15) parse number of queue state
-// (16) parse HTTP
-//
 // nolint: gocyclo
-func (halog *Halog) Parse(in []byte) (ok bool) {
+func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	var err error
 
-	// (1)
+	// Remove prefix from systemd/rsyslog
 	ok = cleanPrefix(in)
 	if !ok {
 		return
 	}
 
-	// (2)
+	// parse client IP
 	halog.ClientIP, ok = parseToString(in, ':')
 	if !ok {
 		return
 	}
 
-	// (3)
+	// parse client port
 	halog.ClientPort, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (4)
+	// parse timestamp, remove '[' and parse until ']'
 	in = in[1:]
 	ts, ok := parseToString(in, ']')
 	if !ok {
@@ -260,74 +288,81 @@ func (halog *Halog) Parse(in []byte) (ok bool) {
 		return false
 	}
 
-	// (5)
+	// parse frontend name
 	in = in[1:]
 	halog.FrontendName, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (6)
+	// parse backend name
 	halog.BackendName, ok = parseToString(in, '/')
 	if !ok {
 		return
 	}
 
-	// (7)
+	// parse server name
 	halog.ServerName, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (8)
+	// parse times
 	ok = halog.parseTimes(in)
 	if !ok {
 		return
 	}
 
-	// (9)
+	// parse HTTP status code
 	halog.HTTPStatus, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (10)
+	// parse bytes read
 	halog.BytesRead, ok = parseToInt64(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (11)
+	// parse request cookie
 	halog.CookieReq, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (12)
+	// parse response cookie
 	halog.CookieRsp, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (13)
+	// parse termination state
 	halog.TermState, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
-	// (14)
+	// parse number of connections
 	ok = halog.parseConns(in)
 	if !ok {
 		return
 	}
 
-	// (15)
+	// parse number of queue state
 	ok = halog.parseQueue(in)
 	if !ok {
 		return
 	}
 
-	// (16)
+	if len(reqHeaders) > 0 {
+		ok = halog.parseRequestHeaders(in, reqHeaders)
+		if !ok {
+			return
+		}
+	}
+
+	// parse HTTP
 	in = in[1:]
 	ok = halog.parseHTTP(in)
 
@@ -341,7 +376,7 @@ func (halog *Halog) Parse(in []byte) (ok bool) {
 // It will return nil and false if UDP packet is nil, have zero length, or
 // cannot be parsed (rejected).
 //
-func (halog *Halog) ParseUDPPacket(p *UDPPacket) bool {
+func (halog *Halog) ParseUDPPacket(p *UDPPacket, reqHeaders []string) bool {
 	if p == nil {
 		return false
 	}
@@ -363,5 +398,5 @@ func (halog *Halog) ParseUDPPacket(p *UDPPacket) bool {
 		in = p.Bytes
 	}
 
-	return halog.Parse(in)
+	return halog.Parse(in, reqHeaders)
 }

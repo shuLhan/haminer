@@ -14,9 +14,10 @@ import (
 
 // List of config keys.
 const (
-	ConfigKeyListen         = "listen"
-	ConfigKeyAcceptBackend  = "accept_backend"
-	ConfigKeyInfluxAPIWrite = "influxdb_api_write"
+	ConfigKeyAcceptBackend        = "accept_backend"
+	ConfigKeyCaptureRequestHeader = "capture_request_header"
+	ConfigKeyInfluxAPIWrite       = "influxdb_api_write"
+	ConfigKeyListen               = "listen"
 )
 
 // List of default config key values.
@@ -38,6 +39,10 @@ type Config struct {
 
 	// AcceptBackend list of backend to be filtered.
 	AcceptBackend []string
+
+	// List of request headers to be parsed and mapped as keys in halog
+	// output.
+	RequestHeaders []string
 
 	// InfluxAPIWrite define HTTP API to write to Influxdb.
 	InfluxAPIWrite string
@@ -82,6 +87,19 @@ func (cfg *Config) SetListen(v string) {
 }
 
 //
+// parseCaptureRequestHeader Parse request header names where each name is
+// separated by "|".
+//
+func (cfg *Config) parseCaptureRequestHeader(v []byte) {
+	sep := []byte{'|'}
+	headers := bytes.Split(v, sep)
+	for x := 0; x < len(headers); x++ {
+		headers[x] = bytes.TrimSpace(headers[x])
+		cfg.RequestHeaders = append(cfg.RequestHeaders, string(headers[x]))
+	}
+}
+
+//
 // Load will read configuration from file defined by `path`.
 //
 func (cfg *Config) Load(path string) {
@@ -109,6 +127,8 @@ func (cfg *Config) Load(path string) {
 		switch string(kv[0]) {
 		case ConfigKeyListen:
 			cfg.SetListen(string(kv[1]))
+		case ConfigKeyCaptureRequestHeader:
+			cfg.parseCaptureRequestHeader(kv[1])
 		case ConfigKeyAcceptBackend:
 			v := string(bytes.TrimSpace(kv[1]))
 			if len(v) > 0 {

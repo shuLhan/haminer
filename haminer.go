@@ -119,7 +119,7 @@ func (h *Haminer) consume() {
 
 		halog := &Halog{}
 
-		ok = halog.ParseUDPPacket(p)
+		ok = halog.ParseUDPPacket(p, h.cfg.RequestHeaders)
 		if !ok {
 			continue
 		}

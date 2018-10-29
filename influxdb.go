@@ -30,10 +30,7 @@ const (
 		"conn_active=%d,conn_frontend=%d,conn_backend=%d," +
 		"conn_server=%d,conn_retries=%d," +
 		"queue_server=%d,queue_backend=%d," +
-		"bytes_read=%d" +
-		" " +
-		// timestamp
-		"%d\n"
+		"bytes_read=%d"
 )
 
 //
@@ -86,11 +83,16 @@ func (cl *InfluxdbClient) initConn() {
 //
 func (cl *InfluxdbClient) Forwards(halogs []*Halog) {
 	lsrc := "InfluxdbClient.Forwards"
-	cl.write(halogs)
+	err := cl.write(halogs)
+	if err != nil {
+		log.Printf("InfluxdbClient.write: %s", err)
+		return
+	}
 
 	rsp, err := cl.conn.Post(cl.apiWrite, defContentType, &cl.buf)
 	if err != nil {
 		log.Printf("InfluxdbClient.Forwards: %s", err)
+		return
 	}
 
 	if rsp.StatusCode >= 200 || rsp.StatusCode <= 299 {
@@ -112,9 +114,7 @@ func (cl *InfluxdbClient) Forwards(halogs []*Halog) {
 	fmt.Printf("%s: response: %d %s\n", lsrc, rsp.StatusCode, rspBody)
 }
 
-func (cl *InfluxdbClient) write(halogs []*Halog) {
-	var err error
-
+func (cl *InfluxdbClient) write(halogs []*Halog) (err error) {
 	cl.buf.Reset()
 
 	for _, l := range halogs {
@@ -133,10 +133,23 @@ func (cl *InfluxdbClient) write(halogs []*Halog) {
 			l.ConnServer, l.ConnRetries,
 			l.QueueServer, l.QueueBackend,
 			l.BytesRead,
-			l.Timestamp.UnixNano(),
 		)
 		if err != nil {
-			log.Printf("InfluxdbClient.write: %s", err)
+			return
+		}
+
+		for k, v := range l.RequestHeaders {
+			_, err = fmt.Fprintf(&cl.buf, ",%s=%q", k, v)
+			if err != nil {
+				return
+			}
+		}
+
+		_, err = fmt.Fprintf(&cl.buf, " %d\n", l.Timestamp.UnixNano())
+		if err != nil {
+			return
 		}
 	}
+
+	return
 }
