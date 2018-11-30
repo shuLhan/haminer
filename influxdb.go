@@ -18,7 +18,8 @@ const (
 		"haproxy," +
 		// tags
 		"host=%q," +
-		"frontend=%q,backend=%q,server=%q" +
+		"frontend=%q,backend=%q,server=%q," +
+		"http_status_code=%d" +
 		" " +
 		// fields
 		"http_proto=%q,http_method=%q,http_url=%q," +
@@ -122,6 +123,7 @@ func (cl *InfluxdbClient) write(halogs []*Halog) (err error) {
 			// tags
 			cl.hostname,
 			l.FrontendName, l.BackendName, l.ServerName,
+			l.HTTPStatus,
 			// fields
 			l.HTTPProto, l.HTTPMethod, l.HTTPURL,
 			l.HTTPQuery, l.HTTPStatus,
