@@ -57,7 +57,7 @@ func initConfig() (cfg *haminer.Config) {
 		cfg.InfluxAPIWrite = flagInfluxAPIWrite
 	}
 
-	return
+	return cfg
 }
 
 func main() {

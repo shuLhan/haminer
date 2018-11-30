@@ -153,5 +153,5 @@ func (cl *InfluxdbClient) write(halogs []*Halog) (err error) {
 		}
 	}
 
-	return
+	return nil
 }

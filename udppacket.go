@@ -30,8 +30,8 @@ func NewUDPPacket(size uint32) (p *UDPPacket) {
 }
 
 //
-// Reset will set the content of packet data to zero, so it can be used agains
-// on Read().
+// Reset will set the content of packet data to zero, so it can be used
+// against on Read().
 //
 func (p *UDPPacket) Reset() {
 	p.Bytes[0] = 0

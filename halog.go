@@ -11,16 +11,12 @@ import (
 	"time"
 )
 
-var (
-	timestampLayout = "2/Jan/2006:15:04:05.000"
-)
-
 //
 // Halog contains the mapping of haproxy HTTP log format to Go struct.
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
 //
-type Halog struct {
+type Halog struct { // nolint: maligned
 	Timestamp time.Time
 
 	ClientIP   string
@@ -248,7 +244,7 @@ func (halog *Halog) parseHTTP(in []byte) (ok bool) {
 
 	halog.HTTPProto, ok = parseToString(in, '"')
 
-	return
+	return ok
 }
 
 //
@@ -283,7 +279,7 @@ func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 		return
 	}
 
-	halog.Timestamp, err = time.Parse(timestampLayout, ts)
+	halog.Timestamp, err = time.Parse("2/Jan/2006:15:04:05.000", ts)
 	if err != nil {
 		return false
 	}
@@ -366,7 +362,7 @@ func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	in = in[1:]
 	ok = halog.parseHTTP(in)
 
-	return
+	return ok
 }
 
 //
