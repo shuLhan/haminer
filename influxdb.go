@@ -19,7 +19,7 @@ const (
 		// tags
 		"host=%q," +
 		"frontend=%q,backend=%q,server=%q," +
-		"http_status_code=%d,tag_http_url=%s" +
+		"tag_http_status=%d,tag_http_url=%s" +
 		" " +
 		// fields
 		"http_proto=%q,http_method=%q,http_url=%q," +
