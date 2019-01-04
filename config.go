@@ -49,6 +49,9 @@ type Config struct {
 	// MaxBufferedLogs define a number of logs that will be keep in buffer
 	// before being forwarded.
 	MaxBufferedLogs int
+
+	// retags contains list of pre-processing rules for tag.
+	retags []*tagPreprocessor
 }
 
 //
@@ -90,6 +93,10 @@ func (cfg *Config) Load(path string) {
 	if len(v) > 0 {
 		cfg.InfluxAPIWrite = v
 	}
+
+	sec := in.GetSection("preprocess", "tag")
+
+	cfg.parsePreprocessTag(sec)
 }
 
 //
@@ -147,5 +154,37 @@ func (cfg *Config) ParseCaptureRequestHeader(v string) {
 			continue
 		}
 		cfg.RequestHeaders = append(cfg.RequestHeaders, headers[x])
+	}
+}
+
+func (cfg *Config) parsePreprocessTag(sec *ini.Section) {
+	if sec == nil {
+		return
+	}
+
+	for _, v := range sec.Vars {
+		if len(v.KeyLower) == 0 {
+			continue
+		}
+		if v.KeyLower != "http_url" {
+			log.Printf("parsePreprocessTag: unknown tag %q\n",
+				v.KeyLower)
+			continue
+		}
+
+		rep := strings.Split(v.Value, "=>")
+		if len(rep) != 2 {
+			log.Printf("parsePreprocessTag: invalid format %q\n",
+				v.Value)
+			continue
+		}
+
+		retag, err := newTagPreprocessor(v.KeyLower, rep[0], rep[1])
+		if err != nil {
+			log.Printf("parsePreprocessTag: %s\n", err)
+			continue
+		}
+
+		cfg.retags = append(cfg.retags, retag)
 	}
 }

@@ -141,6 +141,13 @@ func (h *Haminer) forwards(halogs []*Halog) {
 	}
 }
 
+func (h *Haminer) preprocess(halog *Halog) {
+	halog.tagHTTPURL = halog.HTTPURL
+	for _, retag := range h.cfg.retags {
+		halog.tagHTTPURL = retag.preprocess("http_url", halog.tagHTTPURL)
+	}
+}
+
 func (h *Haminer) produce() {
 	halogs := make([]*Halog, 0)
 
@@ -149,6 +156,8 @@ func (h *Haminer) produce() {
 		if !ok {
 			continue
 		}
+
+		h.preprocess(halog)
 
 		halogs = append(halogs, halog)
 

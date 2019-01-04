@@ -5,8 +5,10 @@
 package haminer
 
 import (
+	"regexp"
 	"testing"
 
+	"github.com/shuLhan/share/lib/ini"
 	"github.com/shuLhan/share/lib/test"
 )
 
@@ -68,6 +70,19 @@ func TestLoad(t *testing.T) {
 				"referrer",
 			},
 			InfluxAPIWrite: "http://127.0.0.1:8086/write",
+			retags: []*tagPreprocessor{{
+				name:  "http_url",
+				regex: regexp.MustCompile(`/[0-9]+-\w+-\w+-\w+-\w+-\w+`),
+				repl:  `/-`,
+			}, {
+				name:  "http_url",
+				regex: regexp.MustCompile(`/\w+-\w+-\w+-\w+-\w+`),
+				repl:  `/-`,
+			}, {
+				name:  "http_url",
+				regex: regexp.MustCompile(`/[0-9]+`),
+				repl:  `/-`,
+			}},
 		},
 	}}
 
@@ -210,5 +225,62 @@ func TestParseCaptureRequestHeader(t *testing.T) {
 		got.ParseCaptureRequestHeader(c.in)
 
 		test.Assert(t, "Config", c.exp, got, true)
+	}
+}
+
+func TestParsePreprocessTag(t *testing.T) {
+	cfg := NewConfig()
+
+	cases := []struct {
+		desc string
+		in   *ini.Section
+		exp  []*tagPreprocessor
+	}{{
+		desc: "With nil",
+	}, {
+		desc: "With unknown key",
+		in: &ini.Section{
+			Vars: []*ini.Variable{{
+				KeyLower: "unknown",
+			}},
+		},
+	}, {
+		desc: "With invalid format",
+		in: &ini.Section{
+			Vars: []*ini.Variable{{
+				KeyLower: "http_url",
+				Value:    "",
+			}},
+		},
+	}, {
+		desc: "With empty regex",
+		in: &ini.Section{
+			Vars: []*ini.Variable{{
+				KeyLower: "http_url",
+				Value:    "=>",
+			}},
+		},
+	}, {
+		desc: "With valid value",
+		in: &ini.Section{
+			Vars: []*ini.Variable{{
+				KeyLower: "http_url",
+				Value:    "/[0-9]+ => /-",
+			}},
+		},
+		exp: []*tagPreprocessor{{
+			name:  "http_url",
+			regex: regexp.MustCompile(`/[0-9]+`),
+			repl:  "/-",
+		}},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		cfg.retags = nil
+		cfg.parsePreprocessTag(c.in)
+
+		test.Assert(t, "retags", c.exp, cfg.retags, true)
 	}
 }

@@ -55,6 +55,8 @@ type Halog struct { // nolint: maligned
 	HTTPURL    string
 	HTTPQuery  string
 	HTTPProto  string
+
+	tagHTTPURL string
 }
 
 //
