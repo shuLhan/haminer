@@ -23,7 +23,7 @@ const (
 		" " +
 		// fields
 		"http_proto=%q,http_method=%q,http_url=%q," +
-		"http_query=\"%s\",http_status=%d," +
+		"http_query=%q,http_status=%d," +
 		"term_state=%q," +
 		"client_ip=%q,client_port=%d," +
 		"time_req=%d,time_wait=%d,time_connect=%d," +
