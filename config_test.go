@@ -1,0 +1,214 @@
+// Copyright 2019, M. Shulhan (ms@kilabit.info).  All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package haminer
+
+import (
+	"testing"
+
+	"github.com/shuLhan/share/lib/test"
+)
+
+func TestNewConfig(t *testing.T) {
+	cases := []struct {
+		desc string
+		exp  *Config
+	}{{
+		desc: "With default config",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		got := NewConfig()
+
+		test.Assert(t, "Config", c.exp, got, true)
+	}
+}
+
+func TestLoad(t *testing.T) {
+	cases := []struct {
+		desc string
+		in   string
+		exp  *Config
+	}{{
+		desc: "With empty path",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With path not exist",
+		in:   "testdata/notexist.conf",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With path exist",
+		in:   "testdata/haminer.conf",
+		exp: &Config{
+			ListenAddr:      "0.0.0.0",
+			ListenPort:      8080,
+			MaxBufferedLogs: defMaxBufferedLogs,
+			AcceptBackend: []string{
+				"a",
+				"b",
+			},
+			RequestHeaders: []string{
+				"host",
+				"referrer",
+			},
+			InfluxAPIWrite: "http://127.0.0.1:8086/write",
+		},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		got := NewConfig()
+		got.Load(c.in)
+
+		test.Assert(t, "Config", c.exp, got, true)
+	}
+}
+
+func TestSetListen(t *testing.T) {
+	cases := []struct {
+		desc string
+		in   string
+		exp  *Config
+	}{{
+		desc: "With empty listen",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With empty port",
+		in:   "127.0.0.2",
+		exp: &Config{
+			ListenAddr:      "127.0.0.2",
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With no port",
+		in:   "127.0.0.3:",
+		exp: &Config{
+			ListenAddr:      "127.0.0.3",
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		got := NewConfig()
+		got.SetListen(c.in)
+
+		test.Assert(t, "Config", c.exp, got, true)
+	}
+}
+
+func TestParseAcceptBackend(t *testing.T) {
+	cases := []struct {
+		desc string
+		in   string
+		exp  *Config
+	}{{
+		desc: "With empty value",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With no separator",
+		in:   "a ; b",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+			AcceptBackend: []string{
+				"a ; b",
+			},
+		},
+	}, {
+		desc: "With comma at beginning and end",
+		in:   ",a,b,",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+			AcceptBackend: []string{
+				"a", "b",
+			},
+		},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		got := NewConfig()
+		got.ParseAcceptBackend(c.in)
+
+		test.Assert(t, "Config", c.exp, got, true)
+	}
+}
+
+func TestParseCaptureRequestHeader(t *testing.T) {
+	cases := []struct {
+		desc string
+		in   string
+		exp  *Config
+	}{{
+		desc: "With empty value",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+		},
+	}, {
+		desc: "With no separator",
+		in:   "a ; b",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+			RequestHeaders: []string{
+				"a ; b",
+			},
+		},
+	}, {
+		desc: "With separator at beginning and end",
+		in:   "|a|b|",
+		exp: &Config{
+			ListenAddr:      defListenAddr,
+			ListenPort:      defListenPort,
+			MaxBufferedLogs: defMaxBufferedLogs,
+			RequestHeaders: []string{
+				"a", "b",
+			},
+		},
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		got := NewConfig()
+		got.ParseCaptureRequestHeader(c.in)
+
+		test.Assert(t, "Config", c.exp, got, true)
+	}
+}

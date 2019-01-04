@@ -5,11 +5,11 @@
 package haminer
 
 import (
-	"bytes"
-	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/shuLhan/share/lib/ini"
 )
 
 // List of config keys.
@@ -22,10 +22,9 @@ const (
 
 // List of default config key values.
 const (
-	DefListenAddr      = "127.0.0.1"
-	DefListenPort      = 5140
-	DefInfluxAPIWrite  = "http://127.0.0.1:8086/write?db=haproxy"
-	DefMaxBufferedLogs = 10
+	defListenAddr      = "127.0.0.1"
+	defListenPort      = 5140
+	defMaxBufferedLogs = 10
 )
 
 //
@@ -53,89 +52,100 @@ type Config struct {
 }
 
 //
-// NewConfig will create, initialize, and return new config with defautl
+// NewConfig will create, initialize, and return new config with default
 // values.
 //
 func NewConfig() (cfg *Config) {
 	return &Config{
-		ListenAddr:      DefListenAddr,
-		ListenPort:      DefListenPort,
-		MaxBufferedLogs: DefMaxBufferedLogs,
+		ListenAddr:      defListenAddr,
+		ListenPort:      defListenPort,
+		MaxBufferedLogs: defMaxBufferedLogs,
 	}
 }
 
 //
-// SetListen will parse `v` value as "addr:port", and set config address and port
-// based on it.
+// Load configuration from file defined by `path`.
+//
+func (cfg *Config) Load(path string) {
+	if len(path) == 0 {
+		return
+	}
+
+	in, err := ini.Open(path)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	v, _ := in.Get("haminer", "", ConfigKeyListen)
+	cfg.SetListen(v)
+
+	v, _ = in.Get("haminer", "", ConfigKeyAcceptBackend)
+	cfg.ParseAcceptBackend(v)
+
+	v, _ = in.Get("haminer", "", ConfigKeyCaptureRequestHeader)
+	cfg.ParseCaptureRequestHeader(v)
+
+	v, _ = in.Get("haminer", "", ConfigKeyInfluxAPIWrite)
+	if len(v) > 0 {
+		cfg.InfluxAPIWrite = v
+	}
+}
+
+//
+// SetListen will parse `v` value as "addr:port", and set config address and
+// port based on it.
 //
 func (cfg *Config) SetListen(v string) {
+	if len(v) == 0 {
+		return
+	}
+
 	var err error
 
 	addrPort := strings.Split(v, ":")
 	switch len(addrPort) {
-	case 0:
-		return
 	case 1:
 		cfg.ListenAddr = addrPort[0]
 	case 2:
 		cfg.ListenAddr = addrPort[0]
 		cfg.ListenPort, err = strconv.Atoi(addrPort[1])
 		if err != nil {
-			cfg.ListenPort = DefListenPort
+			cfg.ListenPort = defListenPort
 		}
 	}
 }
 
-//
-// parseCaptureRequestHeader Parse request header names where each name is
-// separated by "|".
-//
-func (cfg *Config) parseCaptureRequestHeader(v []byte) {
-	sep := []byte{'|'}
-	headers := bytes.Split(v, sep)
-	for x := 0; x < len(headers); x++ {
-		headers[x] = bytes.TrimSpace(headers[x])
-		cfg.RequestHeaders = append(cfg.RequestHeaders, string(headers[x]))
-	}
-}
-
-//
-// Load will read configuration from file defined by `path`.
-//
-func (cfg *Config) Load(path string) {
-	bb, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Println(err)
+func (cfg *Config) ParseAcceptBackend(v string) {
+	v = strings.TrimSpace(v)
+	if len(v) == 0 {
 		return
 	}
 
-	lines := bytes.Split(bb, []byte("\n"))
-
-	for _, line := range lines {
-		if len(line) == 0 {
+	for _, v = range strings.Split(v, ",") {
+		if len(v) == 0 {
 			continue
 		}
-		if line[0] == '#' {
+		cfg.AcceptBackend = append(cfg.AcceptBackend, strings.TrimSpace(v))
+	}
+}
+
+//
+// ParseCaptureRequestHeader Parse request header names where each name is
+// separated by "|".
+//
+func (cfg *Config) ParseCaptureRequestHeader(v string) {
+	v = strings.TrimSpace(v)
+	if len(v) == 0 {
+		return
+	}
+
+	headers := strings.Split(v, "|")
+	for x := 0; x < len(headers); x++ {
+		headers[x] = strings.TrimSpace(headers[x])
+		if len(headers[x]) == 0 {
 			continue
 		}
-
-		kv := bytes.SplitN(line, []byte("="), 2)
-		if len(kv) != 2 {
-			continue
-		}
-
-		switch string(kv[0]) {
-		case ConfigKeyListen:
-			cfg.SetListen(string(kv[1]))
-		case ConfigKeyCaptureRequestHeader:
-			cfg.parseCaptureRequestHeader(kv[1])
-		case ConfigKeyAcceptBackend:
-			v := string(bytes.TrimSpace(kv[1]))
-			if len(v) > 0 {
-				cfg.AcceptBackend = strings.Split(v, ",")
-			}
-		case ConfigKeyInfluxAPIWrite:
-			cfg.InfluxAPIWrite = string(kv[1])
-		}
+		cfg.RequestHeaders = append(cfg.RequestHeaders, headers[x])
 	}
 }
