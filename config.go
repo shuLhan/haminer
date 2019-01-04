@@ -131,8 +131,8 @@ func (cfg *Config) ParseAcceptBackend(v string) {
 }
 
 //
-// ParseCaptureRequestHeader Parse request header names where each name is
-// separated by "|".
+// ParseCaptureRequestHeader parse request header names where each name is
+// separated by ",".
 //
 func (cfg *Config) ParseCaptureRequestHeader(v string) {
 	v = strings.TrimSpace(v)
@@ -140,7 +140,7 @@ func (cfg *Config) ParseCaptureRequestHeader(v string) {
 		return
 	}
 
-	headers := strings.Split(v, "|")
+	headers := strings.Split(v, ",")
 	for x := 0; x < len(headers); x++ {
 		headers[x] = strings.TrimSpace(headers[x])
 		if len(headers[x]) == 0 {

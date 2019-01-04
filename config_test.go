@@ -192,7 +192,7 @@ func TestParseCaptureRequestHeader(t *testing.T) {
 		},
 	}, {
 		desc: "With separator at beginning and end",
-		in:   "|a|b|",
+		in:   ",a,b,",
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
