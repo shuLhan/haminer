@@ -7,6 +7,7 @@ package haminer
 import (
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/shuLhan/share/lib/ini"
 	"github.com/shuLhan/share/lib/test"
@@ -21,7 +22,7 @@ func TestNewConfig(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}}
 
@@ -44,7 +45,7 @@ func TestLoad(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With path not exist",
@@ -52,7 +53,7 @@ func TestLoad(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With path exist",
@@ -60,7 +61,7 @@ func TestLoad(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      "0.0.0.0",
 			ListenPort:      8080,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: time.Second * 20,
 			AcceptBackend: []string{
 				"a",
 				"b",
@@ -106,7 +107,7 @@ func TestSetListen(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With empty port",
@@ -114,7 +115,7 @@ func TestSetListen(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      "127.0.0.2",
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With no port",
@@ -122,7 +123,7 @@ func TestSetListen(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      "127.0.0.3",
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}}
 
@@ -146,7 +147,7 @@ func TestParseAcceptBackend(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With no separator",
@@ -154,7 +155,7 @@ func TestParseAcceptBackend(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 			AcceptBackend: []string{
 				"a ; b",
 			},
@@ -165,7 +166,7 @@ func TestParseAcceptBackend(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 			AcceptBackend: []string{
 				"a", "b",
 			},
@@ -192,7 +193,7 @@ func TestParseCaptureRequestHeader(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With no separator",
@@ -200,7 +201,7 @@ func TestParseCaptureRequestHeader(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 			RequestHeaders: []string{
 				"a ; b",
 			},
@@ -211,7 +212,7 @@ func TestParseCaptureRequestHeader(t *testing.T) {
 		exp: &Config{
 			ListenAddr:      defListenAddr,
 			ListenPort:      defListenPort,
-			MaxBufferedLogs: defMaxBufferedLogs,
+			ForwardInterval: defForwardInterval,
 			RequestHeaders: []string{
 				"a", "b",
 			},
@@ -282,5 +283,34 @@ func TestParsePreprocessTag(t *testing.T) {
 		cfg.parsePreprocessTag(c.in)
 
 		test.Assert(t, "retags", c.exp, cfg.retags, true)
+	}
+}
+
+func TestSetForwardInterval(t *testing.T) {
+	cfg := NewConfig()
+
+	cases := []struct {
+		desc string
+		in   string
+		exp  time.Duration
+	}{{
+		desc: "With empty string",
+		exp:  defForwardInterval,
+	}, {
+		desc: "With no interval unit",
+		in:   "20",
+		exp:  defForwardInterval,
+	}, {
+		desc: "With minus",
+		in:   "-20s",
+		exp:  defForwardInterval,
+	}}
+
+	for _, c := range cases {
+		t.Log(c.desc)
+
+		cfg.SetForwardInterval(c.in)
+
+		test.Assert(t, "ForwardInterval", c.exp, cfg.ForwardInterval, true)
 	}
 }

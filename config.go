@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/shuLhan/share/lib/ini"
 )
@@ -16,6 +17,7 @@ import (
 const (
 	ConfigKeyAcceptBackend        = "accept_backend"
 	ConfigKeyCaptureRequestHeader = "capture_request_header"
+	ConfigKeyForwardInterval      = "forward_interval"
 	ConfigKeyInfluxAPIWrite       = "influxdb_api_write"
 	ConfigKeyListen               = "listen"
 )
@@ -24,7 +26,7 @@ const (
 const (
 	defListenAddr      = "127.0.0.1"
 	defListenPort      = 5140
-	defMaxBufferedLogs = 10
+	defForwardInterval = 15 * time.Second
 )
 
 //
@@ -39,16 +41,15 @@ type Config struct {
 	// AcceptBackend list of backend to be filtered.
 	AcceptBackend []string
 
+	// ForwardInterval define an interval where logs will be forwarded.
+	ForwardInterval time.Duration
+
 	// List of request headers to be parsed and mapped as keys in halog
 	// output.
 	RequestHeaders []string
 
 	// InfluxAPIWrite define HTTP API to write to Influxdb.
 	InfluxAPIWrite string
-
-	// MaxBufferedLogs define a number of logs that will be keep in buffer
-	// before being forwarded.
-	MaxBufferedLogs int
 
 	// retags contains list of pre-processing rules for tag.
 	retags []*tagPreprocessor
@@ -62,7 +63,7 @@ func NewConfig() (cfg *Config) {
 	return &Config{
 		ListenAddr:      defListenAddr,
 		ListenPort:      defListenPort,
-		MaxBufferedLogs: defMaxBufferedLogs,
+		ForwardInterval: defForwardInterval,
 	}
 }
 
@@ -94,9 +95,32 @@ func (cfg *Config) Load(path string) {
 		cfg.InfluxAPIWrite = v
 	}
 
+	v, _ = in.Get("haminer", "", ConfigKeyForwardInterval)
+	cfg.SetForwardInterval(v)
+
 	sec := in.GetSection("preprocess", "tag")
 
 	cfg.parsePreprocessTag(sec)
+}
+
+//
+// SetForwardInterval set forward interval using string formatted, e.g. "20s"
+// where "s" represent unit time in "second".
+//
+func (cfg *Config) SetForwardInterval(v string) {
+	if len(v) == 0 {
+		return
+	}
+
+	var err error
+
+	cfg.ForwardInterval, err = time.ParseDuration(v)
+	if err != nil {
+		log.Println("SetForwardInterval: ", err)
+	}
+	if cfg.ForwardInterval < defForwardInterval {
+		cfg.ForwardInterval = defForwardInterval
+	}
 }
 
 //

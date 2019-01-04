@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 //
@@ -149,21 +150,17 @@ func (h *Haminer) preprocess(halog *Halog) {
 }
 
 func (h *Haminer) produce() {
+	ticker := time.NewTicker(h.cfg.ForwardInterval)
 	halogs := make([]*Halog, 0)
 
 	for h.isRunning {
-		halog, ok := <-h.chHalog
-		if !ok {
-			continue
-		}
+		select {
+		case halog := <-h.chHalog:
+			h.preprocess(halog)
 
-		h.preprocess(halog)
-
-		halogs = append(halogs, halog)
-
-		if len(halogs) >= h.cfg.MaxBufferedLogs {
+			halogs = append(halogs, halog)
+		case <-ticker.C:
 			h.forwards(halogs)
-			halogs = make([]*Halog, 0)
 		}
 	}
 }
