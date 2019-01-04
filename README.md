@@ -10,21 +10,21 @@ Supported forwarder,
 ## Requirements
 
 * [Go](https://golang.org) for building from source code
-* [gometalinter](https://github.com/alecthomas/gometalinter) (optional)
 * [git](https://git-scm.com/) for downloading source code
 * [InfluxDB](https://portal.influxdata.com/downloads) for storing
   HAProxy log.
 * [Chronograf](https://portal.influxdata.com/downloads) for viewing
   influxdb data with graph.
 
+
 ## Building
 
-This steps assume that you already installed `Go`, `git`, `gometalinter`, and
-`influxdb`.
+This steps assume that you already installed `Go`, `git`, and `influxdb`.
 
 Get the source code using git,
 
 	$ git clone git@github.com:shuLhan/haminer.git
+	$ cd haminer
 	$ make
 
 The binary will be installed on `$GOPATH/bin/haminer`.
