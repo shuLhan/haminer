@@ -19,7 +19,7 @@ const (
 		// tags
 		"host=%q," +
 		"frontend=%q,backend=%q,server=%q," +
-		"tag_http_status=%d,tag_http_url=%s" +
+		"tag_http_status=%d,tag_http_url=%s,tag_http_method=%s" +
 		" " +
 		// fields
 		"http_proto=%q,http_method=%q,http_url=%q," +
@@ -123,7 +123,7 @@ func (cl *InfluxdbClient) write(halogs []*Halog) (err error) {
 			// tags
 			cl.hostname,
 			l.FrontendName, l.BackendName, l.ServerName,
-			l.HTTPStatus, l.tagHTTPURL,
+			l.HTTPStatus, l.tagHTTPURL, l.HTTPMethod,
 			// fields
 			l.HTTPProto, l.HTTPMethod, l.HTTPURL,
 			l.HTTPQuery, l.HTTPStatus,
