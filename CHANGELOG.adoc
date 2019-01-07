@@ -1,0 +1,6 @@
+= haminer v0.1.0
+
+== Features
+
+- Forwarding logs to InfluxDB
+- Preprocessing http URL for grouping in InfluxDB
