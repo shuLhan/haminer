@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+// heartbeat of haminer, in case we want to monitor deadman from haminer.
+var heartbeat = &Halog{ // nolint: gochecknoglobals
+	Timestamp:    time.Now(),
+	FrontendName: "-",
+	BackendName:  "-",
+	ServerName:   "-",
+	tagHTTPURL:   "-",
+	HTTPMethod:   "-",
+}
+
 //
 // Halog contains the mapping of haproxy HTTP log format to Go struct.
 //

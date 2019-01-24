@@ -137,6 +137,11 @@ func (h *Haminer) consume() {
 }
 
 func (h *Haminer) forwards(halogs []*Halog) {
+	// Send heartbeat indicator, if logs is empty.
+	if len(halogs) == 0 {
+		heartbeat.Timestamp = time.Now()
+		halogs = append(halogs, heartbeat)
+	}
 	for _, fwder := range h.ff {
 		fwder.Forwards(halogs)
 	}
@@ -161,6 +166,7 @@ func (h *Haminer) produce() {
 			halogs = append(halogs, halog)
 		case <-ticker.C:
 			h.forwards(halogs)
+			halogs = nil
 		}
 	}
 }
