@@ -1,5 +1,5 @@
 module github.com/shuLhan/haminer
 
-go 1.12
+go 1.18
 
-require github.com/shuLhan/share v0.2.0
+require github.com/shuLhan/share v0.40.0

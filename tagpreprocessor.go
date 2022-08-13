@@ -5,7 +5,6 @@
 package haminer
 
 import (
-	"errors"
 	"regexp"
 	"strings"
 )
@@ -16,11 +15,9 @@ type tagPreprocessor struct {
 	repl  string
 }
 
-//
 // newTagPreprocessor create and initialize replace tag pre-processing.
 // The regex and repl strings must be enclosed with double-quote, except for
 // repl it can be empty.
-//
 func newTagPreprocessor(name, regex, repl string) (
 	retag *tagPreprocessor, err error,
 ) {
@@ -29,10 +26,10 @@ func newTagPreprocessor(name, regex, repl string) (
 	repl = strings.TrimSpace(repl)
 
 	if len(name) == 0 {
-		return nil, errors.New("newTagPreprocessor: empty name parameter")
+		return nil, nil
 	}
 	if len(regex) == 0 {
-		return nil, errors.New("newTagPreprocessor: empty regex parameter")
+		return nil, nil
 	}
 
 	re, err := regexp.Compile(regex)

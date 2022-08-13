@@ -18,10 +18,12 @@ const (
 	defConfig    = "/etc/haminer.conf"
 )
 
-func initConfig() (cfg *haminer.Config) {
+func initConfig() (cfg *haminer.Config, err error) {
 	var (
-		flagConfig, flagListen, flagAcceptBackend string
-		flagInfluxAPIWrite                        string
+		flagConfig         string
+		flagListen         string
+		flagAcceptBackend  string
+		flagInfluxAPIWrite string
 	)
 
 	log.SetPrefix(defLogPrefix)
@@ -45,7 +47,10 @@ func initConfig() (cfg *haminer.Config) {
 	flag.Parse()
 
 	if len(flagConfig) > 0 {
-		cfg.Load(flagConfig)
+		err = cfg.Load(flagConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(flagListen) > 0 {
 		cfg.SetListen(flagListen)
@@ -57,18 +62,26 @@ func initConfig() (cfg *haminer.Config) {
 		cfg.InfluxAPIWrite = flagInfluxAPIWrite
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func main() {
-	cfg := initConfig()
+	var (
+		cfg *haminer.Config
+		err error
+	)
+
+	cfg, err = initConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Starting Haminer with config: %+v\n", cfg)
 
 	h := haminer.NewHaminer(cfg)
 
-	err := h.Start()
+	err = h.Start()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 }

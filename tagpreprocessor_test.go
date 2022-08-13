@@ -48,11 +48,11 @@ func TestNewTagPreprocessor(t *testing.T) {
 
 		got, err := newTagPreprocessor(c.name, c.regex, c.repl)
 		if err != nil {
-			test.Assert(t, "error", c.expErr, err.Error(), true)
+			test.Assert(t, `error`, c.expErr, err.Error())
 			continue
 		}
 
-		test.Assert(t, "TagPreprocessor", c.exp, got, true)
+		test.Assert(t, `TagPreprocessor`, c.exp, got)
 	}
 }
 
@@ -124,6 +124,6 @@ func TestPreprocess(t *testing.T) {
 			t.Log("got: ", got)
 		}
 
-		test.Assert(t, "preprocess", c.exp, got, true)
+		test.Assert(t, `preprocess`, c.exp, got)
 	}
 }

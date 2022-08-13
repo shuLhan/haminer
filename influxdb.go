@@ -34,9 +34,7 @@ const (
 		"bytes_read=%d"
 )
 
-//
 // InfluxdbClient contains HTTP connection for writing logs to Influxdb.
-//
 type InfluxdbClient struct {
 	conn     *http.Client
 	apiWrite string
@@ -44,9 +42,7 @@ type InfluxdbClient struct {
 	buf      bytes.Buffer
 }
 
-//
 // NewInfluxdbClient will create, initialize, and return new Influxdb client.
-//
 func NewInfluxdbClient(apiWrite string) (cl *InfluxdbClient) {
 	cl = &InfluxdbClient{
 		apiWrite: apiWrite,
@@ -78,10 +74,8 @@ func (cl *InfluxdbClient) initConn() {
 	}
 }
 
-//
 // Forwards implement the Forwarder interface. It will write all logs to
 // Influxdb.
-//
 func (cl *InfluxdbClient) Forwards(halogs []*Halog) {
 	lsrc := "InfluxdbClient.Forwards"
 	err := cl.write(halogs)

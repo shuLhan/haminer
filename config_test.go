@@ -9,19 +9,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shuLhan/share/lib/ini"
 	"github.com/shuLhan/share/lib/test"
 )
 
 func TestNewConfig(t *testing.T) {
 	cases := []struct {
-		desc string
 		exp  *Config
+		desc string
 	}{{
 		desc: "With default config",
 		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
+			listenAddr:      defListenAddr,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}}
@@ -31,36 +30,39 @@ func TestNewConfig(t *testing.T) {
 
 		got := NewConfig()
 
-		test.Assert(t, "Config", c.exp, got, true)
+		test.Assert(t, `Config`, c.exp, got)
 	}
 }
 
 func TestLoad(t *testing.T) {
-	cases := []struct {
+	type testCase struct {
+		exp  *Config
 		desc string
 		in   string
-		exp  *Config
-	}{{
+	}
+
+	var cases = []testCase{{
 		desc: "With empty path",
 		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
+			listenAddr:      defListenAddr,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With path not exist",
 		in:   "testdata/notexist.conf",
 		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
+			listenAddr:      defListenAddr,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With path exist",
 		in:   "testdata/haminer.conf",
 		exp: &Config{
-			ListenAddr:      "0.0.0.0",
-			ListenPort:      8080,
+			Listen:          `0.0.0.0:8080`,
+			listenAddr:      `0.0.0.0`,
+			listenPort:      8080,
 			ForwardInterval: time.Second * 20,
 			AcceptBackend: []string{
 				"a",
@@ -71,6 +73,11 @@ func TestLoad(t *testing.T) {
 				"referrer",
 			},
 			InfluxAPIWrite: "http://127.0.0.1:8086/write",
+			HttpUrl: []string{
+				`/[0-9]+-\w+-\w+-\w+-\w+-\w+ => /-`,
+				`/\w+-\w+-\w+-\w+-\w+ => /-`,
+				`/[0-9]+ => /-`,
+			},
 			retags: []*tagPreprocessor{{
 				name:  "http_url",
 				regex: regexp.MustCompile(`/[0-9]+-\w+-\w+-\w+-\w+-\w+`),
@@ -87,42 +94,51 @@ func TestLoad(t *testing.T) {
 		},
 	}}
 
-	for _, c := range cases {
+	var (
+		c   testCase
+		got *Config
+		err error
+	)
+
+	for _, c = range cases {
 		t.Log(c.desc)
 
-		got := NewConfig()
-		got.Load(c.in)
+		got = NewConfig()
+		err = got.Load(c.in)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		test.Assert(t, "Config", c.exp, got, true)
+		test.Assert(t, `Config`, c.exp, got)
 	}
 }
 
 func TestSetListen(t *testing.T) {
 	cases := []struct {
+		exp  *Config
 		desc string
 		in   string
-		exp  *Config
 	}{{
 		desc: "With empty listen",
 		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
+			listenAddr:      defListenAddr,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With empty port",
 		in:   "127.0.0.2",
 		exp: &Config{
-			ListenAddr:      "127.0.0.2",
-			ListenPort:      defListenPort,
+			listenAddr:      `127.0.0.2`,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
 		desc: "With no port",
 		in:   "127.0.0.3:",
 		exp: &Config{
-			ListenAddr:      "127.0.0.3",
-			ListenPort:      defListenPort,
+			listenAddr:      `127.0.0.3`,
+			listenPort:      defListenPort,
 			ForwardInterval: defForwardInterval,
 		},
 	}}
@@ -133,141 +149,31 @@ func TestSetListen(t *testing.T) {
 		got := NewConfig()
 		got.SetListen(c.in)
 
-		test.Assert(t, "Config", c.exp, got, true)
-	}
-}
-
-func TestParseAcceptBackend(t *testing.T) {
-	cases := []struct {
-		desc string
-		in   string
-		exp  *Config
-	}{{
-		desc: "With empty value",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-		},
-	}, {
-		desc: "With no separator",
-		in:   "a ; b",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-			AcceptBackend: []string{
-				"a ; b",
-			},
-		},
-	}, {
-		desc: "With comma at beginning and end",
-		in:   ",a,b,",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-			AcceptBackend: []string{
-				"a", "b",
-			},
-		},
-	}}
-
-	for _, c := range cases {
-		t.Log(c.desc)
-
-		got := NewConfig()
-		got.ParseAcceptBackend(c.in)
-
-		test.Assert(t, "Config", c.exp, got, true)
-	}
-}
-
-func TestParseCaptureRequestHeader(t *testing.T) {
-	cases := []struct {
-		desc string
-		in   string
-		exp  *Config
-	}{{
-		desc: "With empty value",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-		},
-	}, {
-		desc: "With no separator",
-		in:   "a ; b",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-			RequestHeaders: []string{
-				"a ; b",
-			},
-		},
-	}, {
-		desc: "With separator at beginning and end",
-		in:   ",a,b,",
-		exp: &Config{
-			ListenAddr:      defListenAddr,
-			ListenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-			RequestHeaders: []string{
-				"a", "b",
-			},
-		},
-	}}
-
-	for _, c := range cases {
-		t.Log(c.desc)
-
-		got := NewConfig()
-		got.ParseCaptureRequestHeader(c.in)
-
-		test.Assert(t, "Config", c.exp, got, true)
+		test.Assert(t, `Config`, c.exp, got)
 	}
 }
 
 func TestParsePreprocessTag(t *testing.T) {
-	cfg := NewConfig()
+	type testCase struct {
+		desc    string
+		httpUrl []string
+		exp     []*tagPreprocessor
+	}
 
-	cases := []struct {
-		desc string
-		in   *ini.Section
-		exp  []*tagPreprocessor
-	}{{
-		desc: "With nil",
+	var (
+		cfg = NewConfig()
+	)
+
+	var cases = []testCase{{
+		desc:    `With invalid format`,
+		httpUrl: []string{``},
 	}, {
-		desc: "With unknown key",
-		in: &ini.Section{
-			Vars: []*ini.Variable{{
-				KeyLower: "unknown",
-			}},
-		},
+		desc:    `With empty regex`,
+		httpUrl: []string{`=>`},
 	}, {
-		desc: "With invalid format",
-		in: &ini.Section{
-			Vars: []*ini.Variable{{
-				KeyLower: "http_url",
-				Value:    "",
-			}},
-		},
-	}, {
-		desc: "With empty regex",
-		in: &ini.Section{
-			Vars: []*ini.Variable{{
-				KeyLower: "http_url",
-				Value:    "=>",
-			}},
-		},
-	}, {
-		desc: "With valid value",
-		in: &ini.Section{
-			Vars: []*ini.Variable{{
-				KeyLower: "http_url",
-				Value:    "/[0-9]+ => /-",
-			}},
+		desc: `With valid value`,
+		httpUrl: []string{
+			`/[0-9]+ => /-`,
 		},
 		exp: []*tagPreprocessor{{
 			name:  "http_url",
@@ -276,41 +182,22 @@ func TestParsePreprocessTag(t *testing.T) {
 		}},
 	}}
 
-	for _, c := range cases {
+	var (
+		c   testCase
+		err error
+	)
+
+	for _, c = range cases {
 		t.Log(c.desc)
 
 		cfg.retags = nil
-		cfg.parsePreprocessTag(c.in)
+		cfg.HttpUrl = c.httpUrl
 
-		test.Assert(t, "retags", c.exp, cfg.retags, true)
-	}
-}
+		err = cfg.parsePreprocessTag()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-func TestSetForwardInterval(t *testing.T) {
-	cfg := NewConfig()
-
-	cases := []struct {
-		desc string
-		in   string
-		exp  time.Duration
-	}{{
-		desc: "With empty string",
-		exp:  defForwardInterval,
-	}, {
-		desc: "With no interval unit",
-		in:   "20",
-		exp:  defForwardInterval,
-	}, {
-		desc: "With minus",
-		in:   "-20s",
-		exp:  defForwardInterval,
-	}}
-
-	for _, c := range cases {
-		t.Log(c.desc)
-
-		cfg.SetForwardInterval(c.in)
-
-		test.Assert(t, "ForwardInterval", c.exp, cfg.ForwardInterval, true)
+		test.Assert(t, `retags`, c.exp, cfg.retags)
 	}
 }

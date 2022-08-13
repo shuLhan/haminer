@@ -21,11 +21,9 @@ var heartbeat = &Halog{ // nolint: gochecknoglobals
 	HTTPMethod:   "-",
 }
 
-//
 // Halog contains the mapping of haproxy HTTP log format to Go struct.
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
-//
 type Halog struct { // nolint: maligned
 	Timestamp time.Time
 
@@ -69,10 +67,8 @@ type Halog struct { // nolint: maligned
 	tagHTTPURL string
 }
 
-//
 // cleanPrefix will remove `<date-time> <process-name>[pid]: ` prefix (which
 // come from systemd/rsyslog) in input.
-//
 func cleanPrefix(in []byte) bool {
 	start := bytes.IndexByte(in, '[')
 	if start < 0 {
@@ -204,11 +200,9 @@ func (halog *Halog) parseQueue(in []byte) (ok bool) {
 	return
 }
 
-//
 // parserRequestHeaders parse the request header values in log file.
 // The request headers start with '{' and end with '}'.
 // Each header is separated by '|'.
-//
 func (halog *Halog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
 	if in[0] != '{' {
 		// Skip if we did not find the beginning.
@@ -259,7 +253,6 @@ func (halog *Halog) parseHTTP(in []byte) (ok bool) {
 	return ok
 }
 
-//
 // Parse will parse one line of HAProxy log format into Halog.
 //
 // nolint: gocyclo
@@ -377,13 +370,11 @@ func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	return ok
 }
 
-//
 // ParseUDPPacket will convert UDP packet (in bytes) to instance of
 // Halog.
 //
 // It will return nil and false if UDP packet is nil, have zero length, or
 // cannot be parsed (rejected).
-//
 func (halog *Halog) ParseUDPPacket(p *UDPPacket, reqHeaders []string) bool {
 	if p == nil {
 		return false

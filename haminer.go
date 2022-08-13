@@ -14,22 +14,18 @@ import (
 	"time"
 )
 
-//
 // Haminer define the log consumer and producer.
-//
 type Haminer struct {
 	cfg       *Config
 	udpConn   *net.UDPConn
-	isRunning bool
 	chSignal  chan os.Signal
 	chHalog   chan *Halog
 	ff        []Forwarder
+	isRunning bool
 }
 
-//
 // NewHaminer create, initialize, and return new Haminer instance. If config
 // parameter is nil, it will use the default options.
-//
 func NewHaminer(cfg *Config) (h *Haminer) {
 	if cfg == nil {
 		cfg = NewConfig()
@@ -58,14 +54,12 @@ func (h *Haminer) createForwarder() {
 	}
 }
 
-//
 // Start will listen for UDP packet and start consuming log, parse, and
 // publish it to analytic server.
-//
 func (h *Haminer) Start() (err error) {
 	udpAddr := &net.UDPAddr{
-		IP:   net.ParseIP(h.cfg.ListenAddr),
-		Port: h.cfg.ListenPort,
+		IP:   net.ParseIP(h.cfg.listenAddr),
+		Port: h.cfg.listenPort,
 	}
 
 	h.udpConn, err = net.ListenUDP("udp", udpAddr)
@@ -85,9 +79,7 @@ func (h *Haminer) Start() (err error) {
 	return
 }
 
-//
 // filter will return true if log is accepted; otherwise it will return false.
-//
 func (h *Haminer) filter(halog *Halog) bool {
 	if halog == nil {
 		return false
@@ -171,9 +163,7 @@ func (h *Haminer) produce() {
 	}
 }
 
-//
 // Stop will close UDP server and clear all resources.
-//
 func (h *Haminer) Stop() {
 	h.isRunning = false
 

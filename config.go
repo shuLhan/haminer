@@ -5,7 +5,7 @@
 package haminer
 
 import (
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -29,104 +29,81 @@ const (
 	defForwardInterval = 15 * time.Second
 )
 
-//
 // Config define options to create and run Haminer instance.
-//
 type Config struct {
-	// ListenAddr is an IP address where Haminer will bind and receiving
+	// Listen is the address where Haminer will bind and receiving
 	// log from HAProxy.
-	ListenAddr string
-	ListenPort int
+	Listen string `ini:"haminer::listen"`
+
+	listenAddr string
 
 	// AcceptBackend list of backend to be filtered.
-	AcceptBackend []string
-
-	// ForwardInterval define an interval where logs will be forwarded.
-	ForwardInterval time.Duration
+	AcceptBackend []string `ini:"haminer::accept_backend"`
 
 	// List of request headers to be parsed and mapped as keys in halog
 	// output.
-	RequestHeaders []string
+	RequestHeaders []string `ini:"haminer::capture_request_header"`
 
 	// InfluxAPIWrite define HTTP API to write to Influxdb.
-	InfluxAPIWrite string
+	InfluxAPIWrite string `ini:"haminer::influxdb_api_write"`
+
+	HttpUrl []string `ini:"preprocess:tag:http_url"`
 
 	// retags contains list of pre-processing rules for tag.
 	retags []*tagPreprocessor
+
+	// ForwardInterval define an interval where logs will be forwarded.
+	ForwardInterval time.Duration `ini:"haminer::forward_interval"`
+
+	listenPort int
 }
 
-//
 // NewConfig will create, initialize, and return new config with default
 // values.
-//
 func NewConfig() (cfg *Config) {
 	return &Config{
-		ListenAddr:      defListenAddr,
-		ListenPort:      defListenPort,
+		listenAddr:      defListenAddr,
+		listenPort:      defListenPort,
 		ForwardInterval: defForwardInterval,
 	}
 }
 
-//
 // Load configuration from file defined by `path`.
-//
-func (cfg *Config) Load(path string) {
+func (cfg *Config) Load(path string) (err error) {
 	if len(path) == 0 {
 		return
 	}
 
-	in, err := ini.Open(path)
+	var (
+		logp = `Load`
+
+		in *ini.Ini
+	)
+
+	in, err = ini.Open(path)
 	if err != nil {
-		log.Println(err)
-		return
+		return fmt.Errorf(`%s: %w`, logp, err)
 	}
 
-	v, _ := in.Get("haminer", "", ConfigKeyListen)
-	cfg.SetListen(v)
-
-	v, _ = in.Get("haminer", "", ConfigKeyAcceptBackend)
-	cfg.ParseAcceptBackend(v)
-
-	v, _ = in.Get("haminer", "", ConfigKeyCaptureRequestHeader)
-	cfg.ParseCaptureRequestHeader(v)
-
-	v, _ = in.Get("haminer", "", ConfigKeyInfluxAPIWrite)
-	if len(v) > 0 {
-		cfg.InfluxAPIWrite = v
+	err = in.Unmarshal(cfg)
+	if err != nil {
+		return fmt.Errorf(`%s: %w`, logp, err)
 	}
 
-	v, _ = in.Get("haminer", "", ConfigKeyForwardInterval)
-	cfg.SetForwardInterval(v)
+	if len(cfg.Listen) != 0 {
+		cfg.SetListen(cfg.Listen)
+	}
 
-	sec := in.GetSection("preprocess", "tag")
+	err = cfg.parsePreprocessTag()
+	if err != nil {
+		return fmt.Errorf(`%s: %w`, logp, err)
+	}
 
-	cfg.parsePreprocessTag(sec)
+	return nil
 }
 
-//
-// SetForwardInterval set forward interval using string formatted, e.g. "20s"
-// where "s" represent unit time in "second".
-//
-func (cfg *Config) SetForwardInterval(v string) {
-	if len(v) == 0 {
-		return
-	}
-
-	var err error
-
-	cfg.ForwardInterval, err = time.ParseDuration(v)
-	if err != nil {
-		log.Println("SetForwardInterval: ", err)
-	}
-	if cfg.ForwardInterval < defForwardInterval {
-		cfg.ForwardInterval = defForwardInterval
-	}
-}
-
-//
 // SetListen will parse `v` value as "addr:port", and set config address and
 // port based on it.
-//
 func (cfg *Config) SetListen(v string) {
 	if len(v) == 0 {
 		return
@@ -137,78 +114,38 @@ func (cfg *Config) SetListen(v string) {
 	addrPort := strings.Split(v, ":")
 	switch len(addrPort) {
 	case 1:
-		cfg.ListenAddr = addrPort[0]
+		cfg.listenAddr = addrPort[0]
 	case 2:
-		cfg.ListenAddr = addrPort[0]
-		cfg.ListenPort, err = strconv.Atoi(addrPort[1])
+		cfg.listenAddr = addrPort[0]
+		cfg.listenPort, err = strconv.Atoi(addrPort[1])
 		if err != nil {
-			cfg.ListenPort = defListenPort
+			cfg.listenPort = defListenPort
 		}
 	}
 }
 
-func (cfg *Config) ParseAcceptBackend(v string) {
-	v = strings.TrimSpace(v)
-	if len(v) == 0 {
-		return
-	}
+func (cfg *Config) parsePreprocessTag() (err error) {
+	var (
+		logp = `parsePreprocessTag`
 
-	for _, v = range strings.Split(v, ",") {
-		if len(v) == 0 {
-			continue
-		}
-		cfg.AcceptBackend = append(cfg.AcceptBackend, strings.TrimSpace(v))
-	}
-}
+		retag   *tagPreprocessor
+		httpUrl string
+		vals    []string
+	)
 
-//
-// ParseCaptureRequestHeader parse request header names where each name is
-// separated by ",".
-//
-func (cfg *Config) ParseCaptureRequestHeader(v string) {
-	v = strings.TrimSpace(v)
-	if len(v) == 0 {
-		return
-	}
-
-	headers := strings.Split(v, ",")
-	for x := 0; x < len(headers); x++ {
-		headers[x] = strings.TrimSpace(headers[x])
-		if len(headers[x]) == 0 {
-			continue
-		}
-		cfg.RequestHeaders = append(cfg.RequestHeaders, headers[x])
-	}
-}
-
-func (cfg *Config) parsePreprocessTag(sec *ini.Section) {
-	if sec == nil {
-		return
-	}
-
-	for _, v := range sec.Vars {
-		if len(v.KeyLower) == 0 {
-			continue
-		}
-		if v.KeyLower != "http_url" {
-			log.Printf("parsePreprocessTag: unknown tag %q\n",
-				v.KeyLower)
+	for _, httpUrl = range cfg.HttpUrl {
+		vals = strings.Split(httpUrl, "=>")
+		if len(vals) != 2 {
 			continue
 		}
 
-		rep := strings.Split(v.Value, "=>")
-		if len(rep) != 2 {
-			log.Printf("parsePreprocessTag: invalid format %q\n",
-				v.Value)
-			continue
-		}
-
-		retag, err := newTagPreprocessor(v.KeyLower, rep[0], rep[1])
+		retag, err = newTagPreprocessor(`http_url`, vals[0], vals[1])
 		if err != nil {
-			log.Printf("parsePreprocessTag: %s\n", err)
-			continue
+			return fmt.Errorf(`%s: %w`, logp, err)
 		}
 
 		cfg.retags = append(cfg.retags, retag)
 	}
+
+	return nil
 }
