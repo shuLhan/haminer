@@ -6,7 +6,7 @@ build:
 	go build -v ./cmd/haminer
 
 lint:
-	-golangci-lint run --enable-all ./...
+	-golangci-lint run ./...
 
 install: build lint
 	go install -v ./cmd/haminer
