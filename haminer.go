@@ -47,11 +47,15 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 }
 
 func (h *Haminer) createForwarder() {
-	if len(h.cfg.InfluxAPIWrite) > 0 {
-		fwder := NewInfluxdbClient(h.cfg.InfluxAPIWrite)
-
-		h.ff = append(h.ff, fwder)
+	if len(h.cfg.Influxd.Url) == 0 {
+		return
 	}
+
+	var (
+		fwder = NewInfluxdbClient(&h.cfg.Influxd)
+	)
+
+	h.ff = append(h.ff, fwder)
 }
 
 // Start will listen for UDP packet and start consuming log, parse, and

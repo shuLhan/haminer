@@ -31,6 +31,8 @@ const (
 
 // Config define options to create and run Haminer instance.
 type Config struct {
+	Influxd InfluxdConfig
+
 	// Listen is the address where Haminer will bind and receiving
 	// log from HAProxy.
 	Listen string `ini:"haminer::listen"`
@@ -43,9 +45,6 @@ type Config struct {
 	// List of request headers to be parsed and mapped as keys in halog
 	// output.
 	RequestHeaders []string `ini:"haminer::capture_request_header"`
-
-	// InfluxAPIWrite define HTTP API to write to Influxdb.
-	InfluxAPIWrite string `ini:"haminer::influxdb_api_write"`
 
 	HttpUrl []string `ini:"preprocess:tag:http_url"`
 
@@ -99,6 +98,11 @@ func (cfg *Config) Load(path string) (err error) {
 		return fmt.Errorf(`%s: %w`, logp, err)
 	}
 
+	err = cfg.Influxd.init()
+	if err != nil {
+		return fmt.Errorf(`%s: %w`, logp, err)
+	}
+
 	return nil
 }
 
@@ -142,6 +146,9 @@ func (cfg *Config) parsePreprocessTag() (err error) {
 		retag, err = newTagPreprocessor(`http_url`, vals[0], vals[1])
 		if err != nil {
 			return fmt.Errorf(`%s: %w`, logp, err)
+		}
+		if retag == nil {
+			continue
 		}
 
 		cfg.retags = append(cfg.retags, retag)

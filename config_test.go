@@ -36,9 +36,10 @@ func TestNewConfig(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	type testCase struct {
-		exp  *Config
-		desc string
-		in   string
+		exp      *Config
+		desc     string
+		in       string
+		expError string
 	}
 
 	var cases = []testCase{{
@@ -49,17 +50,20 @@ func TestLoad(t *testing.T) {
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
-		desc: "With path not exist",
-		in:   "testdata/notexist.conf",
-		exp: &Config{
-			listenAddr:      defListenAddr,
-			listenPort:      defListenPort,
-			ForwardInterval: defForwardInterval,
-		},
+		desc:     `With path not exist`,
+		in:       `testdata/notexist.conf`,
+		expError: `Load: open testdata/notexist.conf: no such file or directory`,
 	}, {
 		desc: "With path exist",
 		in:   "testdata/haminer.conf",
 		exp: &Config{
+			Influxd: InfluxdConfig{
+				Version:  `v2`,
+				Url:      `http://127.0.0.1:8086`,
+				Org:      `kilabit.info`,
+				Bucket:   `haproxy`,
+				apiWrite: `http://127.0.0.1:8086/api/v2/write?bucket=haproxy&org=kilabit.info&precision=ns`,
+			},
 			Listen:          `0.0.0.0:8080`,
 			listenAddr:      `0.0.0.0`,
 			listenPort:      8080,
@@ -72,7 +76,6 @@ func TestLoad(t *testing.T) {
 				"host",
 				"referrer",
 			},
-			InfluxAPIWrite: "http://127.0.0.1:8086/write",
 			HttpUrl: []string{
 				`/[0-9]+-\w+-\w+-\w+-\w+-\w+ => /-`,
 				`/\w+-\w+-\w+-\w+-\w+ => /-`,
@@ -106,7 +109,8 @@ func TestLoad(t *testing.T) {
 		got = NewConfig()
 		err = got.Load(c.in)
 		if err != nil {
-			t.Fatal(err)
+			test.Assert(t, `error`, c.expError, err.Error())
+			continue
 		}
 
 		test.Assert(t, `Config`, c.exp, got)
