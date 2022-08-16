@@ -88,6 +88,9 @@ func (h *Haminer) filter(halog *Halog) bool {
 	if halog == nil {
 		return false
 	}
+	if halog.BackendName == `-` {
+		return false
+	}
 	if len(h.cfg.AcceptBackend) == 0 {
 		return true
 	}
@@ -133,11 +136,6 @@ func (h *Haminer) consume() {
 }
 
 func (h *Haminer) forwards(halogs []*Halog) {
-	// Send heartbeat indicator, if logs is empty.
-	if len(halogs) == 0 {
-		heartbeat.Timestamp = time.Now()
-		halogs = append(halogs, heartbeat)
-	}
 	for _, fwder := range h.ff {
 		fwder.Forwards(halogs)
 	}
@@ -158,11 +156,15 @@ func (h *Haminer) produce() {
 		select {
 		case halog := <-h.chHalog:
 			h.preprocess(halog)
-
 			halogs = append(halogs, halog)
+
 		case <-ticker.C:
+			if len(halogs) == 0 {
+				continue
+			}
+
 			h.forwards(halogs)
-			halogs = nil
+			halogs = halogs[:0]
 		}
 	}
 }
