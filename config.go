@@ -42,7 +42,7 @@ type Config struct {
 	// AcceptBackend list of backend to be filtered.
 	AcceptBackend []string `ini:"haminer::accept_backend"`
 
-	// List of request headers to be parsed and mapped as keys in halog
+	// List of request headers to be parsed and mapped as tags in halog
 	// output.
 	RequestHeaders []string `ini:"haminer::capture_request_header"`
 
