@@ -365,26 +365,25 @@ func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 //
 // It will return nil and false if UDP packet is nil, have zero length, or
 // cannot be parsed (rejected).
-func (halog *Halog) ParseUDPPacket(p *UDPPacket, reqHeaders []string) bool {
-	if p == nil {
-		return false
-	}
-	if len(p.Bytes) == 0 {
+func (halog *Halog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
+	if len(packet) == 0 {
 		return false
 	}
 
-	var in []byte
+	var (
+		endIdx int
+		in     []byte
+	)
 
-	if p.Bytes[0] == '<' {
-		endIdx := bytes.IndexByte(p.Bytes, '>')
+	if packet[0] == '<' {
+		endIdx = bytes.IndexByte(packet, '>')
 		if endIdx < 0 {
 			return false
 		}
 
-		in = make([]byte, len(p.Bytes))
-		copy(in, p.Bytes[endIdx+1:])
+		in = packet[endIdx+1:]
 	} else {
-		in = p.Bytes
+		in = packet
 	}
 
 	return halog.Parse(in, reqHeaders)

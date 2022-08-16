@@ -106,20 +106,23 @@ func (h *Haminer) filter(halog *Halog) bool {
 
 func (h *Haminer) consume() {
 	var (
-		err error
-		ok  bool
-		p   = NewUDPPacket(0)
+		packet = make([]byte, 4096)
+
+		halog *Halog
+		err   error
+		n     int
+		ok    bool
 	)
 
 	for h.isRunning {
-		_, err = h.udpConn.Read(p.Bytes)
+		n, err = h.udpConn.Read(packet)
 		if err != nil {
 			continue
 		}
 
-		halog := &Halog{}
+		halog = &Halog{}
 
-		ok = halog.ParseUDPPacket(p, h.cfg.RequestHeaders)
+		ok = halog.ParseUDPPacket(packet[:n], h.cfg.RequestHeaders)
 		if !ok {
 			continue
 		}
@@ -130,14 +133,6 @@ func (h *Haminer) consume() {
 		}
 
 		h.chHalog <- halog
-
-		p.Reset()
-	}
-}
-
-func (h *Haminer) forwards(halogs []*Halog) {
-	for _, fwder := range h.ff {
-		fwder.Forwards(halogs)
 	}
 }
 
@@ -163,7 +158,10 @@ func (h *Haminer) produce() {
 				continue
 			}
 
-			h.forwards(halogs)
+			for _, fwder := range h.ff {
+				fwder.Forwards(halogs)
+			}
+
 			halogs = halogs[:0]
 		}
 	}
