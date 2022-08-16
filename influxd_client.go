@@ -44,17 +44,17 @@ const (
 		`bytes_read=%d`
 )
 
-// InfluxdbClient contains HTTP connection for writing logs to Influxdb.
-type InfluxdbClient struct {
+// InfluxdClient contains HTTP connection for writing logs to Influxd.
+type InfluxdClient struct {
 	conn     *http.Client
 	cfg      *InfluxdConfig
 	hostname string
 	buf      bytes.Buffer
 }
 
-// NewInfluxdbClient will create, initialize, and return new Influxdb client.
-func NewInfluxdbClient(cfg *InfluxdConfig) (cl *InfluxdbClient) {
-	cl = &InfluxdbClient{
+// NewInfluxdClient will create, initialize, and return new Influxd client.
+func NewInfluxdClient(cfg *InfluxdConfig) (cl *InfluxdClient) {
+	cl = &InfluxdClient{
 		cfg: cfg,
 	}
 
@@ -64,7 +64,7 @@ func NewInfluxdbClient(cfg *InfluxdConfig) (cl *InfluxdbClient) {
 	return
 }
 
-func (cl *InfluxdbClient) initHostname() {
+func (cl *InfluxdClient) initHostname() {
 	var err error
 
 	cl.hostname, err = os.Hostname()
@@ -76,7 +76,7 @@ func (cl *InfluxdbClient) initHostname() {
 	}
 }
 
-func (cl *InfluxdbClient) initConn() {
+func (cl *InfluxdClient) initConn() {
 	tr := &http.Transport{}
 
 	cl.conn = &http.Client{
@@ -85,8 +85,8 @@ func (cl *InfluxdbClient) initConn() {
 }
 
 // Forwards implement the Forwarder interface. It will write all logs to
-// Influxdb.
-func (cl *InfluxdbClient) Forwards(halogs []*Halog) {
+// Influxd.
+func (cl *InfluxdClient) Forwards(halogs []*Halog) {
 	var (
 		logp = `Forwards`
 
@@ -141,7 +141,7 @@ func (cl *InfluxdbClient) Forwards(halogs []*Halog) {
 	fmt.Printf(`%s: response: %d %s\n`, logp, httpRes.StatusCode, rspBody)
 }
 
-func (cl *InfluxdbClient) write(halogs []*Halog) (err error) {
+func (cl *InfluxdClient) write(halogs []*Halog) (err error) {
 	var (
 		l *Halog
 		k string

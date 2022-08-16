@@ -52,7 +52,7 @@ func (h *Haminer) createForwarder() {
 	}
 
 	var (
-		fwder = NewInfluxdbClient(&h.cfg.Influxd)
+		fwder = NewInfluxdClient(&h.cfg.Influxd)
 	)
 
 	h.ff = append(h.ff, fwder)
