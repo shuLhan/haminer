@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/shuLhan/haminer"
+	"git.sr.ht/~shulhan/haminer"
 )
 
 const (

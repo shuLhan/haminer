@@ -1,4 +1,4 @@
-module github.com/shuLhan/haminer
+module git.sr.ht/~shulhan/haminer
 
 go 1.18
 

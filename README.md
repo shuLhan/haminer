@@ -23,7 +23,7 @@ This steps assume that you already installed `Go`, `git`, and `influxdb`.
 
 Get the source code using git,
 
-	$ git clone git@github.com:shuLhan/haminer.git
+	$ git clone https://git.sr.ht/~shulhan/haminer
 	$ cd haminer
 	$ make
 
@@ -32,11 +32,11 @@ The binary will be installed on `$GOPATH/bin/haminer`.
 
 ## Configuration
 
-`haminer` by default will load it's config from `/etc/haminer.conf`, if not
+haminer by default will load it's config from `/etc/haminer.conf`, if not
 specified when running the program.
 
 See
-`[haminer.conf](https://github.com/shuLhan/haminer/blob/master/cmd/haminer/haminer.conf)
+[haminer.conf](https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.conf)
 for an example of possible configuration and their explanation.
 
 
@@ -53,7 +53,7 @@ example,
 ```
 global
 	...
-	log                       127.0.0.1:5140 local3
+	log 127.0.0.1:5140 local3
 	...
 ```
 
@@ -71,4 +71,4 @@ Then reload or restart HAProxy.
 	$ $GOPATH/bin/haminer
 
 or use a
-[systemd service](https://github.com/shuLhan/haminer/blob/master/cmd/haminer/haminer.service).
+[systemd service](https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.service).
