@@ -12,8 +12,8 @@ const (
 	influxdVersion2 = `v2`
 )
 
-// InfluxdConfig contains configuration for forwarding the logs to Influxd.
-type InfluxdConfig struct {
+// ConfigForwarder contains configuration for forwarding the logs to Influxd.
+type ConfigForwarder struct {
 	Version string `ini:"forwarder:influxd:version"`
 
 	Url         string `ini:"forwarder:influxd:url"`
@@ -34,7 +34,7 @@ type InfluxdConfig struct {
 }
 
 // init check, validate, and initialize the configuration values.
-func (cfg *InfluxdConfig) init() (err error) {
+func (cfg *ConfigForwarder) init() (err error) {
 	if len(cfg.Url) == 0 {
 		return
 	}

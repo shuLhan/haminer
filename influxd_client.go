@@ -47,13 +47,13 @@ const (
 // InfluxdClient contains HTTP connection for writing logs to Influxd.
 type InfluxdClient struct {
 	conn     *http.Client
-	cfg      *InfluxdConfig
+	cfg      *ConfigForwarder
 	hostname string
 	buf      bytes.Buffer
 }
 
 // NewInfluxdClient will create, initialize, and return new Influxd client.
-func NewInfluxdClient(cfg *InfluxdConfig) (cl *InfluxdClient) {
+func NewInfluxdClient(cfg *ConfigForwarder) (cl *InfluxdClient) {
 	cl = &InfluxdClient{
 		cfg: cfg,
 	}

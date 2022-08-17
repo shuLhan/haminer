@@ -57,12 +57,13 @@ func TestLoad(t *testing.T) {
 		desc: "With path exist",
 		in:   "testdata/haminer.conf",
 		exp: &Config{
-			Influxd: InfluxdConfig{
-				Version:  `v2`,
-				Url:      `http://127.0.0.1:8086`,
-				Org:      `kilabit.info`,
-				Bucket:   `haproxy`,
-				apiWrite: `http://127.0.0.1:8086/api/v2/write?bucket=haproxy&org=kilabit.info&precision=ns`,
+			Influxd: ConfigForwarder{
+				Version:     `v2`,
+				Url:         `http://127.0.0.1:8086`,
+				Org:         `kilabit.info`,
+				Bucket:      `haproxy`,
+				apiWrite:    `http://127.0.0.1:8086/api/v2/write?bucket=haproxy&org=kilabit.info&precision=ns`,
+				headerToken: `Token `,
 			},
 			Listen:          `0.0.0.0:8080`,
 			listenAddr:      `0.0.0.0`,

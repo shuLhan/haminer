@@ -22,7 +22,7 @@ const (
 
 // Config define options to create and run Haminer instance.
 type Config struct {
-	Influxd InfluxdConfig
+	Influxd ConfigForwarder
 
 	// Listen is the address where Haminer will bind and receiving
 	// log from HAProxy.
