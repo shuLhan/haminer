@@ -8,6 +8,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"git.sr.ht/~shulhan/haminer"
 )
@@ -19,6 +22,8 @@ const (
 
 func main() {
 	var (
+		chSignal = make(chan os.Signal, 1)
+
 		cfg        *haminer.Config
 		err        error
 		flagConfig string
@@ -41,8 +46,16 @@ func main() {
 
 	h := haminer.NewHaminer(cfg)
 
-	err = h.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
+	signal.Notify(chSignal, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		err = h.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	<-chSignal
+	h.Stop()
+	signal.Stop(chSignal)
 }

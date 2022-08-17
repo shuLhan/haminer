@@ -8,9 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -18,7 +15,6 @@ import (
 type Haminer struct {
 	cfg       *Config
 	udpConn   *net.UDPConn
-	chSignal  chan os.Signal
 	chHttpLog chan *HttpLog
 	ff        []Forwarder
 	isRunning bool
@@ -33,13 +29,9 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 
 	h = &Haminer{
 		cfg:       cfg,
-		chSignal:  make(chan os.Signal, 1),
 		chHttpLog: make(chan *HttpLog, 30),
 		ff:        make([]Forwarder, 0),
 	}
-
-	signal.Notify(h.chSignal, syscall.SIGHUP, syscall.SIGINT,
-		syscall.SIGTERM, syscall.SIGQUIT)
 
 	h.createForwarder()
 
@@ -75,11 +67,6 @@ func (h *Haminer) Start() (err error) {
 
 	go h.consume()
 	go h.produce()
-
-	<-h.chSignal
-
-	h.Stop()
-
 	return
 }
 
@@ -170,8 +157,6 @@ func (h *Haminer) produce() {
 // Stop will close UDP server and clear all resources.
 func (h *Haminer) Stop() {
 	h.isRunning = false
-
-	signal.Stop(h.chSignal)
 
 	if h.udpConn != nil {
 		err := h.udpConn.Close()
