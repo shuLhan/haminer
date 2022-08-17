@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// Halog contains the mapping of haproxy HTTP log format to Go struct.
+// HttpLog contains the mapping of haproxy HTTP log format to Go struct.
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
-type Halog struct { // nolint: maligned
+type HttpLog struct { // nolint: maligned
 	Timestamp time.Time
 
 	ClientIP   string
@@ -121,7 +121,7 @@ func parseToInt64(in []byte, sep byte) (int64, bool) {
 	return v, true
 }
 
-func (halog *Halog) parseTimes(in []byte) (ok bool) {
+func (halog *HttpLog) parseTimes(in []byte) (ok bool) {
 	halog.TimeReq, ok = parseToInt32(in, '/')
 	if !ok {
 		return
@@ -150,7 +150,7 @@ func (halog *Halog) parseTimes(in []byte) (ok bool) {
 	return
 }
 
-func (halog *Halog) parseConns(in []byte) (ok bool) {
+func (halog *HttpLog) parseConns(in []byte) (ok bool) {
 	halog.ConnActive, ok = parseToInt32(in, '/')
 	if !ok {
 		return
@@ -179,7 +179,7 @@ func (halog *Halog) parseConns(in []byte) (ok bool) {
 	return
 }
 
-func (halog *Halog) parseQueue(in []byte) (ok bool) {
+func (halog *HttpLog) parseQueue(in []byte) (ok bool) {
 	halog.QueueServer, ok = parseToInt32(in, '/')
 	if !ok {
 		return
@@ -193,7 +193,7 @@ func (halog *Halog) parseQueue(in []byte) (ok bool) {
 // parserRequestHeaders parse the request header values in log file.
 // The request headers start with '{' and end with '}'.
 // Each header is separated by '|'.
-func (halog *Halog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
+func (halog *HttpLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
 	if in[0] != '{' {
 		// Skip if we did not find the beginning.
 		return true
@@ -222,7 +222,7 @@ func (halog *Halog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool
 	return true
 }
 
-func (halog *Halog) parseHTTP(in []byte) (ok bool) {
+func (halog *HttpLog) parseHTTP(in []byte) (ok bool) {
 	halog.HTTPMethod, ok = parseToString(in, ' ')
 	if !ok {
 		return
@@ -243,10 +243,10 @@ func (halog *Halog) parseHTTP(in []byte) (ok bool) {
 	return ok
 }
 
-// Parse will parse one line of HAProxy log format into Halog.
+// Parse will parse one line of HAProxy log format into HttpLog.
 //
 // nolint: gocyclo
-func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
+func (halog *HttpLog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	var err error
 
 	// Remove prefix from systemd/rsyslog
@@ -361,11 +361,11 @@ func (halog *Halog) Parse(in []byte, reqHeaders []string) (ok bool) {
 }
 
 // ParseUDPPacket will convert UDP packet (in bytes) to instance of
-// Halog.
+// HttpLog.
 //
 // It will return nil and false if UDP packet is nil, have zero length, or
 // cannot be parsed (rejected).
-func (halog *Halog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
+func (halog *HttpLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
 	if len(packet) == 0 {
 		return false
 	}

@@ -86,7 +86,7 @@ func (cl *InfluxdClient) initConn() {
 
 // Forwards implement the Forwarder interface. It will write all logs to
 // Influxd.
-func (cl *InfluxdClient) Forwards(halogs []*Halog) {
+func (cl *InfluxdClient) Forwards(halogs []*HttpLog) {
 	var (
 		logp = `Forwards`
 
@@ -141,9 +141,9 @@ func (cl *InfluxdClient) Forwards(halogs []*Halog) {
 	fmt.Printf(`%s: response: %d %s\n`, logp, httpRes.StatusCode, rspBody)
 }
 
-func (cl *InfluxdClient) write(halogs []*Halog) (err error) {
+func (cl *InfluxdClient) write(halogs []*HttpLog) (err error) {
 	var (
-		l *Halog
+		l *HttpLog
 		k string
 		v string
 	)
