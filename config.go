@@ -22,7 +22,7 @@ const (
 
 // Config define options to create and run Haminer instance.
 type Config struct {
-	Influxd ConfigForwarder
+	Forwarders map[string]*ConfigForwarder `ini:"forwarder"`
 
 	// Listen is the address where Haminer will bind and receiving
 	// log from HAProxy.
@@ -68,6 +68,7 @@ func (cfg *Config) Load(path string) (err error) {
 		logp = `Load`
 
 		in *ini.Ini
+		fw *ConfigForwarder
 	)
 
 	in, err = ini.Open(path)
@@ -89,9 +90,11 @@ func (cfg *Config) Load(path string) (err error) {
 		return fmt.Errorf(`%s: %w`, logp, err)
 	}
 
-	err = cfg.Influxd.init()
-	if err != nil {
-		return fmt.Errorf(`%s: %w`, logp, err)
+	for _, fw = range cfg.Forwarders {
+		err = fw.init()
+		if err != nil {
+			return fmt.Errorf(`%s: %w`, logp, err)
+		}
 	}
 
 	return nil

@@ -10,27 +10,29 @@ const (
 
 	influxdVersion1 = `v1`
 	influxdVersion2 = `v2`
+
+	forwarderInfluxd = `influxd`
 )
 
-// ConfigForwarder contains configuration for forwarding the logs to Influxd.
+// ConfigForwarder contains configuration for forwarding the logs.
 type ConfigForwarder struct {
-	Version string `ini:"forwarder:influxd:version"`
+	Version string `ini:"::version"`
 
-	Url         string `ini:"forwarder:influxd:url"`
+	Url         string `ini:"::url"`
 	apiWrite    string
 	headerToken string
 
-	Bucket string `ini:"forwarder:influxd:bucket"`
+	Bucket string `ini:"::bucket"`
 
 	// Fields for HTTP API v1.
 
-	User string `ini:"forwarder:influxd:user"`
-	Pass string `ini:"forwarder:influxd:pass"`
+	User string `ini:"::user"`
+	Pass string `ini:"::pass"`
 
 	// Fields for HTTP API v2.
 
-	Org   string `ini:"forwarder:influxd:org"`
-	Token string `ini:"forwarder:influxd:token"`
+	Org   string `ini:"::org"`
+	Token string `ini:"::token"`
 }
 
 // init check, validate, and initialize the configuration values.

@@ -54,6 +54,10 @@ type InfluxdClient struct {
 
 // NewInfluxdClient will create, initialize, and return new Influxd client.
 func NewInfluxdClient(cfg *ConfigForwarder) (cl *InfluxdClient) {
+	if len(cfg.Url) == 0 {
+		return nil
+	}
+
 	cl = &InfluxdClient{
 		cfg: cfg,
 	}

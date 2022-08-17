@@ -39,15 +39,21 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 }
 
 func (h *Haminer) createForwarder() {
-	if len(h.cfg.Influxd.Url) == 0 {
-		return
-	}
-
 	var (
-		fwder = NewInfluxdClient(&h.cfg.Influxd)
+		fwCfg    *ConfigForwarder
+		influxdc *InfluxdClient
+		fwName   string
 	)
 
-	h.ff = append(h.ff, fwder)
+	for fwName, fwCfg = range h.cfg.Forwarders {
+		switch fwName {
+		case forwarderInfluxd:
+			influxdc = NewInfluxdClient(fwCfg)
+			if influxdc != nil {
+				h.ff = append(h.ff, influxdc)
+			}
+		}
+	}
 }
 
 // Start will listen for UDP packet and start consuming log, parse, and
