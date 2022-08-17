@@ -13,15 +13,6 @@ import (
 	"github.com/shuLhan/share/lib/ini"
 )
 
-// List of config keys.
-const (
-	ConfigKeyAcceptBackend        = "accept_backend"
-	ConfigKeyCaptureRequestHeader = "capture_request_header"
-	ConfigKeyForwardInterval      = "forward_interval"
-	ConfigKeyInfluxAPIWrite       = "influxdb_api_write"
-	ConfigKeyListen               = "listen"
-)
-
 // List of default config key values.
 const (
 	defListenAddr      = "127.0.0.1"
