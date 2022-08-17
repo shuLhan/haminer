@@ -6,9 +6,42 @@ package haminer
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	influxdMeasurement = `haproxy`
+
+	influxdTags = `,host=%s` +
+		`,server=%s` +
+		`,backend=%s` +
+		`,frontend=%s` +
+		`,http_method=%s` +
+		`,http_url=%s` +
+		`,http_query=%q` +
+		`,http_proto=%s` +
+		`,http_status=%d` +
+		`,term_state=%s` +
+		`,client_ip=%s` +
+		`,client_port=%d`
+
+	influxdFields = `time_req=%d,` +
+		`time_wait=%d,` +
+		`time_connect=%d,` +
+		`time_rsp=%d,` +
+		`time_all=%d,` +
+		`conn_active=%d,` +
+		`conn_frontend=%d,` +
+		`conn_backend=%d,` +
+		`conn_server=%d,` +
+		`conn_retries=%d,` +
+		`queue_server=%d,` +
+		`queue_backend=%d,` +
+		`bytes_read=%d`
 )
 
 // HttpLog contains the mapping of haproxy HTTP log format to Go struct.
@@ -387,4 +420,67 @@ func (halog *HttpLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
 	}
 
 	return halog.Parse(in, reqHeaders)
+}
+
+// writeIlp write the HTTP log as Influxdb Line Protocol.
+func (httpLog *HttpLog) writeIlp(out io.Writer) (err error) {
+	var (
+		k string
+		v string
+	)
+
+	_, err = out.Write([]byte(influxdMeasurement))
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(out, influxdTags,
+		// tags
+		_hostname,
+		httpLog.ServerName,
+		httpLog.BackendName,
+		httpLog.FrontendName,
+		httpLog.HTTPMethod,
+		httpLog.HTTPURL,
+		httpLog.HTTPQuery,
+		httpLog.HTTPProto,
+		httpLog.HTTPStatus,
+		httpLog.TermState,
+		httpLog.ClientIP,
+		httpLog.ClientPort,
+	)
+	if err != nil {
+		return err
+	}
+
+	for k, v = range httpLog.RequestHeaders {
+		_, err = fmt.Fprintf(out, `,%s=%s`, k, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = out.Write([]byte(` `))
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(out, influxdFields,
+		httpLog.TimeReq, httpLog.TimeWait, httpLog.TimeConnect,
+		httpLog.TimeRsp, httpLog.TimeAll,
+		httpLog.ConnActive, httpLog.ConnFrontend, httpLog.ConnBackend,
+		httpLog.ConnServer, httpLog.ConnRetries,
+		httpLog.QueueServer, httpLog.QueueBackend,
+		httpLog.BytesRead,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(out, " %d\n", httpLog.Timestamp.UnixNano())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

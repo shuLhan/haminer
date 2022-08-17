@@ -8,7 +8,17 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
+)
+
+const (
+	defHostname = `localhost`
+	envHostname = `HOSTNAME`
+)
+
+var (
+	_hostname string
 )
 
 // Haminer define the log consumer and producer.
@@ -18,6 +28,18 @@ type Haminer struct {
 	chHttpLog chan *HttpLog
 	ff        []Forwarder
 	isRunning bool
+}
+
+func initHostname() {
+	var err error
+
+	_hostname, err = os.Hostname()
+	if err != nil {
+		_hostname = os.Getenv(envHostname)
+	}
+	if len(_hostname) == 0 {
+		_hostname = defHostname
+	}
 }
 
 // NewHaminer create, initialize, and return new Haminer instance. If config
@@ -33,6 +55,8 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 		ff:        make([]Forwarder, 0),
 	}
 
+	initHostname()
+
 	h.createForwarder()
 
 	return
@@ -40,18 +64,35 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 
 func (h *Haminer) createForwarder() {
 	var (
-		fwCfg    *ConfigForwarder
-		influxdc *InfluxdClient
-		fwName   string
+		logp = `createForwarder`
+
+		fwCfg  *ConfigForwarder
+		fwName string
+		err    error
 	)
 
 	for fwName, fwCfg = range h.cfg.Forwarders {
+		var influxc *InfluxdClient
+
 		switch fwName {
 		case forwarderInfluxd:
-			influxdc = NewInfluxdClient(fwCfg)
-			if influxdc != nil {
-				h.ff = append(h.ff, influxdc)
+			influxc = NewInfluxdClient(fwCfg)
+			if influxc != nil {
+				h.ff = append(h.ff, influxc)
 			}
+
+		case forwarderQuestdb:
+			var questc *questdbClient
+
+			questc, err = newQuestdbClient(fwCfg)
+			if err != nil {
+				log.Printf(`%s: %s: %s`, logp, fwName, err)
+				continue
+			}
+			if questc == nil {
+				continue
+			}
+			h.ff = append(h.ff, questc)
 		}
 	}
 }

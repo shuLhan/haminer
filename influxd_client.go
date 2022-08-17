@@ -10,38 +10,7 @@ import (
 )
 
 const (
-	envHostname    = "HOSTNAME"
-	defHostname    = "localhost"
 	defContentType = "application/octet-stream"
-
-	influxdMeasurement = `haproxy`
-
-	influxdTags = `,host=%s,` +
-		`server=%s,` +
-		`backend=%s,` +
-		`frontend=%s,` +
-		`http_method=%s,` +
-		`http_url=%s,` +
-		`http_query=%q,` +
-		`http_proto=%s,` +
-		`http_status=%d,` +
-		`term_state=%s,` +
-		`client_ip=%s,` +
-		`client_port=%d`
-
-	influxdFields = `time_req=%d,` +
-		`time_wait=%d,` +
-		`time_connect=%d,` +
-		`time_rsp=%d,` +
-		`time_all=%d,` +
-		`conn_active=%d,` +
-		`conn_frontend=%d,` +
-		`conn_backend=%d,` +
-		`conn_server=%d,` +
-		`conn_retries=%d,` +
-		`queue_server=%d,` +
-		`queue_backend=%d,` +
-		`bytes_read=%d`
 )
 
 // InfluxdClient contains HTTP connection for writing logs to Influxd.
@@ -92,7 +61,7 @@ func (cl *InfluxdClient) initConn() {
 // Influxd.
 func (cl *InfluxdClient) Forwards(halogs []*HttpLog) {
 	var (
-		logp = `Forwards`
+		logp = `influxdClient: Forwards`
 
 		httpReq *http.Request
 		httpRes *http.Response

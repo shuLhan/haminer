@@ -67,8 +67,9 @@ func (cfg *Config) Load(path string) (err error) {
 	var (
 		logp = `Load`
 
-		in *ini.Ini
-		fw *ConfigForwarder
+		in     *ini.Ini
+		fwCfg  *ConfigForwarder
+		fwName string
 	)
 
 	in, err = ini.Open(path)
@@ -90,10 +91,10 @@ func (cfg *Config) Load(path string) (err error) {
 		return fmt.Errorf(`%s: %w`, logp, err)
 	}
 
-	for _, fw = range cfg.Forwarders {
-		err = fw.init()
+	for fwName, fwCfg = range cfg.Forwarders {
+		err = fwCfg.init(fwName)
 		if err != nil {
-			return fmt.Errorf(`%s: %w`, logp, err)
+			return fmt.Errorf(`%s: %s: %w`, logp, fwName, err)
 		}
 	}
 

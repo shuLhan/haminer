@@ -12,6 +12,7 @@ const (
 	influxdVersion2 = `v2`
 
 	forwarderInfluxd = `influxd`
+	forwarderQuestdb = `questdb`
 )
 
 // ConfigForwarder contains configuration for forwarding the logs.
@@ -36,11 +37,19 @@ type ConfigForwarder struct {
 }
 
 // init check, validate, and initialize the configuration values.
-func (cfg *ConfigForwarder) init() (err error) {
+func (cfg *ConfigForwarder) init(fwName string) (err error) {
 	if len(cfg.Url) == 0 {
 		return
 	}
 
+	if fwName == forwarderInfluxd {
+		return cfg.initInfluxd()
+	}
+
+	return nil
+}
+
+func (cfg *ConfigForwarder) initInfluxd() (err error) {
 	switch cfg.Version {
 	case influxdVersion1:
 	case influxdVersion2:
@@ -55,10 +64,10 @@ func (cfg *ConfigForwarder) init() (err error) {
 	var (
 		q = url.Values{}
 
-		url *url.URL
+		surl *url.URL
 	)
 
-	url, err = url.Parse(cfg.Url)
+	surl, err = url.Parse(cfg.Url)
 	if err != nil {
 		return err
 	}
@@ -66,7 +75,7 @@ func (cfg *ConfigForwarder) init() (err error) {
 	q.Set(`precision`, `ns`)
 
 	if cfg.Version == influxdVersion1 {
-		url.Path = `/write`
+		surl.Path = `/write`
 
 		q.Set(`db`, cfg.Bucket)
 		if len(cfg.User) > 0 && len(cfg.Pass) > 0 {
@@ -75,7 +84,7 @@ func (cfg *ConfigForwarder) init() (err error) {
 		}
 	} else {
 		cfg.headerToken = `Token ` + cfg.Token
-		url.Path = `/api/v2/write`
+		surl.Path = `/api/v2/write`
 
 		if len(cfg.Org) == 0 {
 			return errors.New(`empty organization field`)
@@ -85,9 +94,9 @@ func (cfg *ConfigForwarder) init() (err error) {
 		q.Set(`bucket`, cfg.Bucket)
 	}
 
-	url.RawQuery = q.Encode()
+	surl.RawQuery = q.Encode()
 
-	cfg.apiWrite = url.String()
+	cfg.apiWrite = surl.String()
 
 	return nil
 }
