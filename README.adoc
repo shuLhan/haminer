@@ -7,25 +7,17 @@
 
 Library and program to parse and forward HAProxy logs.
 
-Supported forwarder,
-
-* Influxdb
+Supported forwarder: Influxdb, QuestDB.
 
 
-==  Requirements
+==  Installation
+
+===  Building from source
+
+*Requirements*
 
 * https://golang.org[Go^] for building from source code
 * https://git-scm.com/[git^] for downloading source code
-
-One of supported time series database for storing HAProxy log, either
-
-* https://portal.influxdata.com/downloads[InfluxDB^]
-* https://questdb.io[QuestDB^]
-
-
-==  Building
-
-This steps assume that you already installed `Go` and `git`.
 
 Get the source code using git,
 
@@ -36,6 +28,21 @@ $ make
 ----
 
 The binary name is `haminer` build in the current directory.
+
+
+===  Pre-build package
+
+The Arch Linux package is available at build.kilabit.info.
+Add the following repository to your pacman.conf,
+
+----
+[build.kilabit.info]
+Server = https://build.kilabit.info/aur
+----
+
+To install it,
+
+	$ sudo pacman -Sy --noconfirm haminer-git
 
 
 == Configuration
@@ -109,7 +116,7 @@ url = udp://127.0.0.1:9009
 We did not need to create the table, questdb will handled that automatically.
 
 
-== Installation
+==  Deployment
 
 . Copy configuration from `$SOURCE/cmd/haminer/haminer/conf` to
 `/etc/haminer.conf`
@@ -150,6 +157,11 @@ $ haminer
 or use a
 https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.service[systemd
 service^].
+
+----
+$ sudo systemctl enable haminer
+$ sudo systemctl start  haminer
+----
 --
 
 
