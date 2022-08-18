@@ -1,0 +1,47 @@
+# Maintainer: shulhan <ms@kilabit.info>
+
+pkgname=haminer-git
+pkgver=0.1.0.r17.g7e7c491
+pkgrel=1
+
+pkgdesc="Library and program to parse and forward HAProxy logs."
+arch=(x86_64)
+url='https://git.sr.ht/~shulhan/haminer'
+license=('GPL3')
+
+makedepends=(
+	'go'
+	'git'
+)
+
+provides=('haminer')
+
+source=(
+	"$pkgname::git+https://git.sr.ht/~shulhan/haminer"
+	#"$pkgname::git+file:///home/ms/go/src/git.sr.ht/~shulhan/haminer"
+)
+md5sums=(
+	'SKIP'
+)
+
+backup=(
+	'etc/haminer.conf'
+)
+
+pkgver() {
+	cd "$pkgname"
+	git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+	cd "$pkgname"
+	make
+}
+
+package() {
+	cd "$pkgname"
+	install -Dm644 ./cmd/haminer/haminer.conf     $pkgdir/etc/haminer.conf
+	install -Dm755 ./haminer                      $pkgdir/usr/bin/haminer
+	install -Dm644 ./cmd/haminer/haminer.service  $pkgdir/usr/lib/systemd/system/haminer.service
+	install -Dm644 COPYING                        $pkgdir/usr/share/licenses/haminer/COPYING
+}

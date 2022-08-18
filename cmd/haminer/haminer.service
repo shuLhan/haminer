@@ -6,9 +6,9 @@ Description=haminer
 After=syslog.target network.target
 
 [Service]
-ExecStart=/usr/local/bin/haminer
-User=centos
+ExecStart=/usr/bin/haminer
 Restart=always
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target

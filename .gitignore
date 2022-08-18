@@ -2,5 +2,9 @@
 ## SPDX-License-Identifier: GPL-3.0-or-later
 
 *.html
+/_AUR/*.tar.zst
+/_AUR/haminer-git
+/_AUR/pkg
+/_AUR/src
 /cover.out
 /haminer
