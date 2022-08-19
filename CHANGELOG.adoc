@@ -1,8 +1,23 @@
 // SPDX-FileCopyrightText: 2018 M. Shulhan <ms@kilabit.info>
 // SPDX-License-Identifier: GPL-3.0-or-later
-= haminer v0.1.0
+= CHANGELOG
+:toc:
+:sectanchors:
+:sectlinks:
 
-== Features
+[#v0.2.0]
+==  haminer v0.2.0 (2022-08-20)
 
-- Forwarding logs to InfluxDB
-- Preprocessing http URL for grouping in InfluxDB
+This release relicensing the software to GPLv3, add support for forwarding
+logs to InfluxDB v2 and questdb [1].
+
+[1] https://questdb.io.
+
+
+[#v0.1.0]
+==  haminer v0.1.0
+
+=== Features
+
+* Forwarding logs to InfluxDB
+* Preprocessing http URL for grouping in InfluxDB
