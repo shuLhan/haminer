@@ -1,0 +1,25 @@
+= haminer
+:toc:
+:sectanchors:
+:sectlinks:
+
+Welcome to haminer.
+
+haminer is a library and a program to write static web server with embedded
+files using AsciiDoc markup format.
+
+==  Documentation
+
+link:CHANGELOG.html[CHANGELOG^]:: History of each release.
+
+link:README.html[README^]:: User manual page for haminer.
+
+==  Development
+
+https://git.sr.ht/~shulhan/haminer[Repository^]:: Link to the source code.
+
+https://lists.sr.ht/~shulhan/public-inbox[Mailing list^]:: Link to development
+and discussion.
+
+https://todo.sr.ht/~shulhan/haminer[Issues^]:: Link to submit an issue,
+feedback, or request for new feature.
