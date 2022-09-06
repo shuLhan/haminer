@@ -3,10 +3,56 @@
 :sectanchors:
 :sectlinks:
 
-Welcome to haminer.
+haminer is a library and program to parse and forward HAProxy HTTP logs.
 
-haminer is a library and a program to write static web server with embedded
-files using AsciiDoc markup format.
+The HTTP logs is HTTP request that received by HAProxy frontend and forwarded
+to backend.
+In default format, it looks like these (split into multi lines, for
+readability):
+
+----
+<158>Sep  4 17:08:47 haproxy[109530]: 185.83.144.103:46376
+  [04/Sep/2022:17:08:47.264] www~ be_kilabit/kilabit-0.0/0/1/2/3 200 89 - -
+  ---- 5/5/0/0/0 0/0 "GET / HTTP/1.1"
+----
+
+See
+https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3[HTTP log format documentation]
+for more information.
+
+Currently, there are two supported database where haminer can forward the
+parsed log: influxdb and questdb.
+Haminer support Influxdb v1 and v2.
+
+----
+ +---------+  UDP  +---------+      +-----------+
+ | HAProxy |------>| haminer |----->| influxdb  |
+ +---------+       +---------+      | / questdb |
+                                    +-----------+
+----
+
+In Influxdb, the log are stored as measurement called `haproxy`.
+In Questdb, the log are stored as table called `haproxy`.
+
+The following fields are stored as tags (in Influxdb) or symbol (in Questdb):
+host, server, backend, frontend, http_method, http_url, http_query,
+http_proto, http_status, term_state, client_ip, client_port.
+
+And the following fields are stored as fields (in Influxdb) or values (in
+Questdb): time_req, time_wait, time_connect, time_rsp, time_all,
+conn_active, conn_frontend, conn_backend, conn_server, conn_retries,
+queue_server, queue_backend, bytes_read.
+
+Once the log has been accumulated, we can query the data.
+For example, with Questdb we can count each visited URL using the following
+query,
+
+----
+select backend, http_url, count(*) as visit from 'haproxy'
+group by backend, http_url
+order by visit desc;
+----
+
 
 ==  Documentation
 
