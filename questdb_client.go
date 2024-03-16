@@ -20,8 +20,8 @@ const (
 
 // questdbClient client for questdb.
 type questdbClient struct {
-	buf  bytes.Buffer
 	conn net.Conn
+	buf  bytes.Buffer
 }
 
 // newQuestdbClient create and initialize client connection using the Url in

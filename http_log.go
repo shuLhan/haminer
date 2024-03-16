@@ -46,28 +46,36 @@ const (
 // HttpLog contains the mapping of haproxy HTTP log format to Go struct.
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
-type HttpLog struct { // nolint: maligned
+type HttpLog struct {
 	Timestamp time.Time
 
-	ClientIP   string
-	ClientPort int32
+	RequestHeaders map[string]string
+
+	ClientIP string
 
 	FrontendName string
 	BackendName  string
 	ServerName   string
+
+	CookieReq string
+	CookieRsp string
+	TermState string
+
+	HTTPMethod string
+	HTTPURL    string
+	HTTPQuery  string
+	HTTPProto  string
+	tagHTTPURL string
+
+	BytesRead int64
+
+	ClientPort int32
 
 	TimeReq     int32
 	TimeWait    int32
 	TimeConnect int32
 	TimeRsp     int32
 	TimeAll     int32
-
-	BytesRead int64
-
-	CookieReq string
-	CookieRsp string
-
-	TermState string
 
 	ConnActive   int32
 	ConnFrontend int32
@@ -78,15 +86,7 @@ type HttpLog struct { // nolint: maligned
 	QueueServer  int32
 	QueueBackend int32
 
-	RequestHeaders map[string]string
-
 	HTTPStatus int32
-	HTTPMethod string
-	HTTPURL    string
-	HTTPQuery  string
-	HTTPProto  string
-
-	tagHTTPURL string
 }
 
 // cleanPrefix will remove `<date-time> <process-name>[pid]: ` prefix (which
