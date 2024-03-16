@@ -1,9 +1,6 @@
 = haminer
-:toc:
-:sectanchors:
-:sectlinks:
 
-haminer is a library and program to parse and forward HAProxy HTTP logs.
+`haminer` is a library and program to parse and forward HAProxy HTTP logs.
 
 The HTTP logs is HTTP request that received by HAProxy frontend and forwarded
 to backend.
@@ -21,13 +18,13 @@ https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3[HTTP log format
 for more information.
 
 Currently, there are two supported database where haminer can forward the
-parsed log: influxdb and questdb.
+parsed log: Influxdb and Questdb.
 Haminer support Influxdb v1 and v2.
 
 ----
  +---------+  UDP  +---------+      +-----------+
- | HAProxy |------>| haminer |----->| influxdb  |
- +---------+       +---------+      | / questdb |
+ | HAProxy |------>| haminer |----->| Influxdb  |
+ +---------+       +---------+      | / Questdb |
                                     +-----------+
 ----
 

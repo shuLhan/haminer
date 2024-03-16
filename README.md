@@ -1,9 +1,4 @@
-// SPDX-FileCopyrightText: 2018 M. Shulhan <ms@kilabit.info>
-// SPDX-License-Identifier: GPL-3.0-or-later
-= haminer
-:toc:
-:sectanchors:
-:sectlinks:
+# haminer
 
 Library and program to parse and forward HAProxy logs.
 
@@ -12,26 +7,27 @@ to backend.
 In default format, it looks like these (split into multi lines, for
 readability):
 
-----
+```
 <158>Sep  4 17:08:47 haproxy[109530]: 185.83.144.103:46376
   [04/Sep/2022:17:08:47.264] www~ be_kilabit/kilabit-0.0/0/1/2/3 200 89 - -
   ---- 5/5/0/0/0 0/0 "GET / HTTP/1.1"
-----
+```
 
 See
-https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3[HTTP log format documentation]
+[HTTP log format
+documentation](https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3)
 for more information.
 
 Currently, there are two supported database where haminer can forward the
-parsed log: influxdb and questdb.
+parsed log: Influxdb and Questdb.
 Haminer support Influxdb v1 and v2.
 
-----
+```
  +---------+  UDP  +---------+      +-----------+
- | HAProxy |------>| haminer |----->| influxdb  |
- +---------+       +---------+      | / questdb |
+ | HAProxy |------>| haminer |----->| Influxdb  |
+ +---------+       +---------+      | / Questdb |
                                     +-----------+
-----
+```
 
 In Influxdb, the log are stored as measurement called `haproxy`.
 In Questdb, the log are stored as table called `haproxy`.
@@ -49,172 +45,167 @@ Once the log has been accumulated, we can query the data.
 For example, with Questdb we can count each visited URL using the following
 query,
 
-----
+```
 select backend, http_url, count(*) as visit from 'haproxy'
 group by backend, http_url
 order by visit desc;
-----
+```
 
-==  Installation
+## Installation
 
-===  Building from source
+### Building from source
 
-*Requirements*
+Requirements,
 
-* https://golang.org[Go^] for building from source code
-* https://git-scm.com/[git^] for downloading source code
+- [Go](https://golang.org) for building the source code
+- [git](https://git-scm.com) for downloading the source code
 
 Get the source code using git,
 
-----
+```
 $ git clone https://git.sr.ht/~shulhan/haminer
 $ cd haminer
 $ make
-----
+```
 
 The binary name is `haminer` build in the current directory.
 
 
-===  Pre-build package
+### Pre-build package
 
 The Arch Linux package is available at build.kilabit.info.
-Add the following repository to your pacman.conf,
+Add the following repository to your `pacman.conf`,
 
-----
+```
 [build.kilabit.info]
 Server = https://build.kilabit.info/aur
-----
+```
 
 To install it,
 
 	$ sudo pacman -Sy --noconfirm haminer-git
 
 
-== Configuration
+## Configuration
 
 haminer by default will load it's config from `/etc/haminer.conf`, if not
 specified when running the program.
 
 See
-https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.conf[haminer.conf^]
+[haminer.conf](https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.conf)
 for an example of possible configuration and their explanation.
 
 
-===  Forwarders
+### Forwarders
 
 Currently, there are two supported database where haminer can forward the
-parsed log: influxdb and questdb.
+parsed log: Influxdb and Questdb.
 Haminer support Influxdb v1 and v2.
 
-====  Influxdb v1
+#### Influxdb v1
 
 For v1, you need to create the user and database first,
 
-----
+```
 $ influx
 > CREATE USER "haminer" WITH PASSWORD 'haminer'
 > CREATE DATABASE haminer
 > GRANT ALL ON haminer TO haminer
-----
+```
 
 Example of forwarder configuration,
 
-----
+```
 [forwarder "influxd"]
 version = v1
 url = http://127.0.0.1:8086
 bucket = haminer
 user = haminer
 password  = haminer
-----
+```
 
-====  Influxdb v2
+#### Influxdb v2
 
 For v2,
 
-----
+```
 $ sudo influx bucket create \
 	--name haminer \
 	--retention 30d
-----
+```
 
 For v2, the example configuration is
 
-----
+```
 [forwarder "influxd"]
-version = v1
+version = v2
 url = http://127.0.0.1:8086
 org = $org
 bucket = haminer
 token = $token
-----
+```
 
-====  Questdb
+#### Questdb
 
-For questdb the configuration is quite simple,
+For Questdb the configuration is quite simple,
 
-----
+```
 [forwarder "questdb"]
 url = udp://127.0.0.1:9009
-----
+```
 
-We did not need to create the table, questdb will handled that automatically.
+We did not need to create the table, Questdb will handled that automatically.
 
 
-==  Deployment
+## Deployment
 
-. Copy configuration from `$SOURCE/cmd/haminer/haminer/conf` to
+Copy configuration from `$SOURCE/cmd/haminer/haminer/conf` to
 `/etc/haminer.conf`
 
-. Update haminer configuration in `/etc/haminer.conf`
-+
---
+Update haminer configuration in `/etc/haminer.conf`.
 For example,
-----
+
+```
 [haminer]
 listen = 127.0.0.1:5140
 
 ...
-----
+```
 
 Add one or more provider to the configuration as the example above.
---
 
-. Update HAProxy config to forward log to UDP port other than rsyslog.
-+
---
+Update HAProxy config to forward log to UDP port other than rsyslog.
 For example,
-----
+
+```
 global
 	...
 	log 127.0.0.1:5140 local3
 	...
-----
+```
+
 Then reload or restart HAProxy.
---
 
-. Run the haminer program,
-+
---
-----
+Run the haminer program,
+
+```
 $ haminer
-----
-or use a
-https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.service[systemd
-service^].
+```
 
-----
+or use a
+[systemd service](https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.service).
+
+```
 $ sudo systemctl enable haminer
 $ sudo systemctl start  haminer
-----
---
+```
 
 
-==  License
+##  License
 
-----
+```
 haminer - Library and program to parse and forward HAProxy logs.
-Copyright (C) 2018-2022 M. Shulhan <ms@kilabit.info>
+Copyright (C) 2018-2024 M. Shulhan <ms@kilabit.info>
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -228,4 +219,4 @@ details.
 You should have received a copy of the GNU General Public License along with
 this program.
 If not, see <http://www.gnu.org/licenses/>.
-----
+```
