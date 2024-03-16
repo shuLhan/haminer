@@ -4,11 +4,12 @@
 package haminer
 
 import (
+	"os"
 	"regexp"
 	"testing"
 	"time"
 
-	"github.com/shuLhan/share/lib/test"
+	"git.sr.ht/~shulhan/pakakeh.go/lib/test"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -41,6 +42,8 @@ func TestLoad(t *testing.T) {
 		expError string
 	}
 
+	_ = os.Remove(`testdata/notexist.conf`)
+
 	var cases = []testCase{{
 		desc: "With empty path",
 		exp: &Config{
@@ -49,9 +52,13 @@ func TestLoad(t *testing.T) {
 			ForwardInterval: defForwardInterval,
 		},
 	}, {
-		desc:     `With path not exist`,
-		in:       `testdata/notexist.conf`,
-		expError: `Load: open testdata/notexist.conf: no such file or directory`,
+		desc: `With path not exist`,
+		in:   `testdata/notexist.conf`,
+		exp: &Config{
+			listenAddr:      defListenAddr,
+			listenPort:      defListenPort,
+			ForwardInterval: defForwardInterval,
+		},
 	}, {
 		desc: "With path exist",
 		in:   "testdata/haminer.conf",
@@ -111,6 +118,7 @@ func TestLoad(t *testing.T) {
 		got = NewConfig()
 		err = got.Load(c.in)
 		if err != nil {
+			t.Logf(`err=%s`, err)
 			test.Assert(t, `error`, c.expError, err.Error())
 			continue
 		}

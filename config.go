@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shuLhan/share/lib/ini"
+	"git.sr.ht/~shulhan/pakakeh.go/lib/ini"
 )
 
 // List of default config key values.

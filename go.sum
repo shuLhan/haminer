@@ -1,4 +1,4 @@
-github.com/shuLhan/share v0.44.0 h1:Afom8pQrzNYtUZM53y+eqlZw5lkFm7bgl3QjZ3ARsgg=
-github.com/shuLhan/share v0.44.0/go.mod h1:BnjohSsgDFMeYQ0/ws7kzb1oABZdVbEwDNGbUhOLee4=
-golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
-golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+git.sr.ht/~shulhan/pakakeh.go v0.53.2-0.20240315075343-713d51e4792f h1:bP4msj5TVm+kQ6GUt6QvwEXOVOzUk2MQc5c8bSto8sc=
+git.sr.ht/~shulhan/pakakeh.go v0.53.2-0.20240315075343-713d51e4792f/go.mod h1:tTHoHDHuBxj5q1zwpLZGCKrdc6i0I3sP8kPp+JEs16c=
+golang.org/x/sys v0.18.0 h1:DBdB3niSjOA/O0blCZBqDefyWNYveAYMNF1Wum0DYQ4=
+golang.org/x/sys v0.18.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
