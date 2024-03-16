@@ -24,7 +24,7 @@ var (
 type Haminer struct {
 	cfg       *Config
 	udpConn   *net.UDPConn
-	chHttpLog chan *HttpLog
+	httpLogq  chan *HTTPLog
 	ff        []Forwarder
 	isRunning bool
 }
@@ -49,9 +49,9 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 	}
 
 	h = &Haminer{
-		cfg:       cfg,
-		chHttpLog: make(chan *HttpLog, 30),
-		ff:        make([]Forwarder, 0),
+		cfg:      cfg,
+		httpLogq: make(chan *HTTPLog, 30),
+		ff:       make([]Forwarder, 0),
 	}
 
 	initHostname()
@@ -117,7 +117,7 @@ func (h *Haminer) Start() (err error) {
 }
 
 // filter will return true if log is accepted; otherwise it will return false.
-func (h *Haminer) filter(halog *HttpLog) bool {
+func (h *Haminer) filter(halog *HTTPLog) bool {
 	if halog == nil {
 		return false
 	}
@@ -141,7 +141,7 @@ func (h *Haminer) consume() {
 	var (
 		packet = make([]byte, 4096)
 
-		halog *HttpLog
+		halog *HTTPLog
 		err   error
 		n     int
 		ok    bool
@@ -153,7 +153,7 @@ func (h *Haminer) consume() {
 			continue
 		}
 
-		halog = &HttpLog{}
+		halog = &HTTPLog{}
 
 		ok = halog.ParseUDPPacket(packet[:n], h.cfg.RequestHeaders)
 		if !ok {
@@ -165,11 +165,11 @@ func (h *Haminer) consume() {
 			continue
 		}
 
-		h.chHttpLog <- halog
+		h.httpLogq <- halog
 	}
 }
 
-func (h *Haminer) preprocess(halog *HttpLog) {
+func (h *Haminer) preprocess(halog *HTTPLog) {
 	halog.tagHTTPURL = halog.HTTPURL
 	for _, retag := range h.cfg.retags {
 		halog.tagHTTPURL = retag.preprocess("http_url", halog.tagHTTPURL)
@@ -178,11 +178,11 @@ func (h *Haminer) preprocess(halog *HttpLog) {
 
 func (h *Haminer) produce() {
 	ticker := time.NewTicker(h.cfg.ForwardInterval)
-	halogs := make([]*HttpLog, 0)
+	halogs := make([]*HTTPLog, 0)
 
 	for h.isRunning {
 		select {
-		case halog := <-h.chHttpLog:
+		case halog := <-h.httpLogq:
 			h.preprocess(halog)
 			halogs = append(halogs, halog)
 

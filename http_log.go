@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -43,10 +44,10 @@ const (
 		`bytes_read=%d`
 )
 
-// HttpLog contains the mapping of haproxy HTTP log format to Go struct.
+// HTTPLog contains the mapping of haproxy HTTP log format to Go struct.
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
-type HttpLog struct {
+type HTTPLog struct {
 	Timestamp time.Time
 
 	RequestHeaders map[string]string
@@ -122,19 +123,30 @@ func parseToString(in []byte, sep byte) (string, bool) {
 }
 
 func parseToInt32(in []byte, sep byte) (int32, bool) {
-	end := bytes.IndexByte(in, sep)
+	var end = bytes.IndexByte(in, sep)
 	if end < 0 {
 		return 0, false
 	}
 
-	v, err := strconv.Atoi(string(in[:end]))
+	var (
+		v   int64
+		err error
+	)
+
+	v, err = strconv.ParseInt(string(in[:end]), 10, 32)
 	if err != nil {
 		return 0, false
 	}
 
 	copy(in, in[end+1:])
 
-	return int32(v), true
+	if v > math.MaxInt32 {
+		return 0, false
+	}
+
+	var vi32 = int32(v)
+
+	return vi32, true
 }
 
 func parseToInt64(in []byte, sep byte) (int64, bool) {
@@ -153,57 +165,28 @@ func parseToInt64(in []byte, sep byte) (int64, bool) {
 	return v, true
 }
 
-func (halog *HttpLog) parseTimes(in []byte) (ok bool) {
-	halog.TimeReq, ok = parseToInt32(in, '/')
+func (httpLog *HTTPLog) parseTimes(in []byte) (ok bool) {
+	httpLog.TimeReq, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	halog.TimeWait, ok = parseToInt32(in, '/')
+	httpLog.TimeWait, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	halog.TimeConnect, ok = parseToInt32(in, '/')
+	httpLog.TimeConnect, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	halog.TimeRsp, ok = parseToInt32(in, '/')
+	httpLog.TimeRsp, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	halog.TimeAll, ok = parseToInt32(in, ' ')
-	if !ok {
-		return
-	}
-
-	return
-}
-
-func (halog *HttpLog) parseConns(in []byte) (ok bool) {
-	halog.ConnActive, ok = parseToInt32(in, '/')
-	if !ok {
-		return
-	}
-
-	halog.ConnFrontend, ok = parseToInt32(in, '/')
-	if !ok {
-		return
-	}
-
-	halog.ConnBackend, ok = parseToInt32(in, '/')
-	if !ok {
-		return
-	}
-
-	halog.ConnServer, ok = parseToInt32(in, '/')
-	if !ok {
-		return
-	}
-
-	halog.ConnRetries, ok = parseToInt32(in, ' ')
+	httpLog.TimeAll, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
@@ -211,13 +194,42 @@ func (halog *HttpLog) parseConns(in []byte) (ok bool) {
 	return
 }
 
-func (halog *HttpLog) parseQueue(in []byte) (ok bool) {
-	halog.QueueServer, ok = parseToInt32(in, '/')
+func (httpLog *HTTPLog) parseConns(in []byte) (ok bool) {
+	httpLog.ConnActive, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	halog.QueueBackend, ok = parseToInt32(in, ' ')
+	httpLog.ConnFrontend, ok = parseToInt32(in, '/')
+	if !ok {
+		return
+	}
+
+	httpLog.ConnBackend, ok = parseToInt32(in, '/')
+	if !ok {
+		return
+	}
+
+	httpLog.ConnServer, ok = parseToInt32(in, '/')
+	if !ok {
+		return
+	}
+
+	httpLog.ConnRetries, ok = parseToInt32(in, ' ')
+	if !ok {
+		return
+	}
+
+	return
+}
+
+func (httpLog *HTTPLog) parseQueue(in []byte) (ok bool) {
+	httpLog.QueueServer, ok = parseToInt32(in, '/')
+	if !ok {
+		return
+	}
+
+	httpLog.QueueBackend, ok = parseToInt32(in, ' ')
 
 	return
 }
@@ -225,7 +237,7 @@ func (halog *HttpLog) parseQueue(in []byte) (ok bool) {
 // parserRequestHeaders parse the request header values in log file.
 // The request headers start with '{' and end with '}'.
 // Each header is separated by '|'.
-func (halog *HttpLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
+func (httpLog *HTTPLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
 	if in[0] != '{' {
 		// Skip if we did not find the beginning.
 		return true
@@ -244,9 +256,9 @@ func (halog *HttpLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bo
 		return
 	}
 
-	halog.RequestHeaders = make(map[string]string)
+	httpLog.RequestHeaders = make(map[string]string)
 	for x, name := range reqHeaders {
-		halog.RequestHeaders[name] = string(bheaders[x])
+		httpLog.RequestHeaders[name] = string(bheaders[x])
 	}
 
 	copy(in, in[end+2:])
@@ -254,8 +266,8 @@ func (halog *HttpLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bo
 	return true
 }
 
-func (halog *HttpLog) parseHTTP(in []byte) (ok bool) {
-	halog.HTTPMethod, ok = parseToString(in, ' ')
+func (httpLog *HTTPLog) parseHTTP(in []byte) (ok bool) {
+	httpLog.HTTPMethod, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
@@ -265,20 +277,20 @@ func (halog *HttpLog) parseHTTP(in []byte) (ok bool) {
 		return
 	}
 	urlQuery := strings.SplitN(v, "?", 2)
-	halog.HTTPURL = urlQuery[0]
+	httpLog.HTTPURL = urlQuery[0]
 	if len(urlQuery) == 2 {
-		halog.HTTPQuery = urlQuery[1]
+		httpLog.HTTPQuery = urlQuery[1]
 	}
 
-	halog.HTTPProto, ok = parseToString(in, '"')
+	httpLog.HTTPProto, ok = parseToString(in, '"')
 
 	return ok
 }
 
-// Parse will parse one line of HAProxy log format into HttpLog.
+// Parse will parse one line of HAProxy log format into HTTPLog.
 //
 // nolint: gocyclo
-func (halog *HttpLog) Parse(in []byte, reqHeaders []string) (ok bool) {
+func (httpLog *HTTPLog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	var err error
 
 	// Remove prefix from systemd/rsyslog
@@ -288,13 +300,13 @@ func (halog *HttpLog) Parse(in []byte, reqHeaders []string) (ok bool) {
 	}
 
 	// parse client IP
-	halog.ClientIP, ok = parseToString(in, ':')
+	httpLog.ClientIP, ok = parseToString(in, ':')
 	if !ok {
 		return
 	}
 
 	// parse client port
-	halog.ClientPort, ok = parseToInt32(in, ' ')
+	httpLog.ClientPort, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
@@ -306,80 +318,80 @@ func (halog *HttpLog) Parse(in []byte, reqHeaders []string) (ok bool) {
 		return
 	}
 
-	halog.Timestamp, err = time.Parse("2/Jan/2006:15:04:05.000", ts)
+	httpLog.Timestamp, err = time.Parse(`2/Jan/2006:15:04:05.000`, ts)
 	if err != nil {
 		return false
 	}
 
 	// parse frontend name
 	in = in[1:]
-	halog.FrontendName, ok = parseToString(in, ' ')
+	httpLog.FrontendName, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse backend name
-	halog.BackendName, ok = parseToString(in, '/')
+	httpLog.BackendName, ok = parseToString(in, '/')
 	if !ok {
 		return
 	}
 
 	// parse server name
-	halog.ServerName, ok = parseToString(in, ' ')
+	httpLog.ServerName, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse times
-	ok = halog.parseTimes(in)
+	ok = httpLog.parseTimes(in)
 	if !ok {
 		return
 	}
 
 	// parse HTTP status code
-	halog.HTTPStatus, ok = parseToInt32(in, ' ')
+	httpLog.HTTPStatus, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse bytes read
-	halog.BytesRead, ok = parseToInt64(in, ' ')
+	httpLog.BytesRead, ok = parseToInt64(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse request cookie
-	halog.CookieReq, ok = parseToString(in, ' ')
+	httpLog.CookieReq, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse response cookie
-	halog.CookieRsp, ok = parseToString(in, ' ')
+	httpLog.CookieRsp, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse termination state
-	halog.TermState, ok = parseToString(in, ' ')
+	httpLog.TermState, ok = parseToString(in, ' ')
 	if !ok {
 		return
 	}
 
 	// parse number of connections
-	ok = halog.parseConns(in)
+	ok = httpLog.parseConns(in)
 	if !ok {
 		return
 	}
 
 	// parse number of queue state
-	ok = halog.parseQueue(in)
+	ok = httpLog.parseQueue(in)
 	if !ok {
 		return
 	}
 
 	if len(reqHeaders) > 0 {
-		ok = halog.parseRequestHeaders(in, reqHeaders)
+		ok = httpLog.parseRequestHeaders(in, reqHeaders)
 		if !ok {
 			return
 		}
@@ -387,17 +399,17 @@ func (halog *HttpLog) Parse(in []byte, reqHeaders []string) (ok bool) {
 
 	// parse HTTP
 	in = in[1:]
-	ok = halog.parseHTTP(in)
+	ok = httpLog.parseHTTP(in)
 
 	return ok
 }
 
 // ParseUDPPacket will convert UDP packet (in bytes) to instance of
-// HttpLog.
+// HTTPLog.
 //
 // It will return nil and false if UDP packet is nil, have zero length, or
 // cannot be parsed (rejected).
-func (halog *HttpLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
+func (httpLog *HTTPLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
 	if len(packet) == 0 {
 		return false
 	}
@@ -418,11 +430,11 @@ func (halog *HttpLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
 		in = packet
 	}
 
-	return halog.Parse(in, reqHeaders)
+	return httpLog.Parse(in, reqHeaders)
 }
 
 // writeIlp write the HTTP log as Influxdb Line Protocol.
-func (httpLog *HttpLog) writeIlp(out io.Writer) (err error) {
+func (httpLog *HTTPLog) writeIlp(out io.Writer) (err error) {
 	var (
 		k string
 		v string

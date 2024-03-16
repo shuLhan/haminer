@@ -22,7 +22,7 @@ const (
 type ConfigForwarder struct {
 	Version string `ini:"::version"`
 
-	Url         string `ini:"::url"`
+	URL         string `ini:"::url"`
 	apiWrite    string
 	headerToken string
 
@@ -41,7 +41,7 @@ type ConfigForwarder struct {
 
 // init check, validate, and initialize the configuration values.
 func (cfg *ConfigForwarder) init(fwName string) (err error) {
-	if len(cfg.Url) == 0 {
+	if len(cfg.URL) == 0 {
 		return
 	}
 
@@ -70,7 +70,7 @@ func (cfg *ConfigForwarder) initInfluxd() (err error) {
 		surl *url.URL
 	)
 
-	surl, err = url.Parse(cfg.Url)
+	surl, err = url.Parse(cfg.URL)
 	if err != nil {
 		return err
 	}

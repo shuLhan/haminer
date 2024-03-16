@@ -24,10 +24,10 @@ type questdbClient struct {
 	buf  bytes.Buffer
 }
 
-// newQuestdbClient create and initialize client connection using the Url in
+// newQuestdbClient create and initialize client connection using the URL in
 // the ConfigForwarder.
 func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
-	if cfg == nil || len(cfg.Url) == 0 {
+	if cfg == nil || len(cfg.URL) == 0 {
 		return nil, nil
 	}
 
@@ -41,7 +41,7 @@ func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
 		port    uint16
 	)
 
-	surl, err = url.Parse(cfg.Url)
+	surl, err = url.Parse(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf(`%s: %w`, logp, err)
 	}
@@ -69,12 +69,12 @@ func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
 
 // Forwards implement the Forwarder interface.
 // It will write all logs to questdb.
-func (questc *questdbClient) Forwards(logs []*HttpLog) {
+func (questc *questdbClient) Forwards(logs []*HTTPLog) {
 	var (
 		logp = `questdbClient: Forwards`
 		now  = time.Now()
 
-		httpLog *HttpLog
+		httpLog *HTTPLog
 		data    []byte
 		err     error
 	)

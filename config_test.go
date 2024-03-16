@@ -66,7 +66,7 @@ func TestLoad(t *testing.T) {
 			Forwarders: map[string]*ConfigForwarder{
 				`influxd`: &ConfigForwarder{
 					Version:     `v2`,
-					Url:         `http://127.0.0.1:8086`,
+					URL:         `http://127.0.0.1:8086`,
 					Org:         `kilabit.info`,
 					Bucket:      `haproxy`,
 					apiWrite:    `http://127.0.0.1:8086/api/v2/write?bucket=haproxy&org=kilabit.info&precision=ns`,
@@ -85,7 +85,7 @@ func TestLoad(t *testing.T) {
 				"host",
 				"referrer",
 			},
-			HttpUrl: []string{
+			HTTPURL: []string{
 				`/[0-9]+-\w+-\w+-\w+-\w+-\w+ => /-`,
 				`/\w+-\w+-\w+-\w+-\w+ => /-`,
 				`/[0-9]+ => /-`,
@@ -170,7 +170,7 @@ func TestSetListen(t *testing.T) {
 func TestParsePreprocessTag(t *testing.T) {
 	type testCase struct {
 		desc    string
-		httpUrl []string
+		httpURL []string
 		exp     []*tagPreprocessor
 	}
 
@@ -180,13 +180,13 @@ func TestParsePreprocessTag(t *testing.T) {
 
 	var cases = []testCase{{
 		desc:    `With invalid format`,
-		httpUrl: []string{``},
+		httpURL: []string{``},
 	}, {
 		desc:    `With empty regex`,
-		httpUrl: []string{`=>`},
+		httpURL: []string{`=>`},
 	}, {
 		desc: `With valid value`,
-		httpUrl: []string{
+		httpURL: []string{
 			`/[0-9]+ => /-`,
 		},
 		exp: []*tagPreprocessor{{
@@ -205,7 +205,7 @@ func TestParsePreprocessTag(t *testing.T) {
 		t.Log(c.desc)
 
 		cfg.retags = nil
-		cfg.HttpUrl = c.httpUrl
+		cfg.HTTPURL = c.httpURL
 
 		err = cfg.parsePreprocessTag()
 		if err != nil {

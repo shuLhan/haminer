@@ -36,7 +36,7 @@ type Config struct {
 	// output.
 	RequestHeaders []string `ini:"haminer::capture_request_header"`
 
-	HttpUrl []string `ini:"preprocess:tag:http_url"`
+	HTTPURL []string `ini:"preprocess:tag:http_url"`
 
 	// retags contains list of pre-processing rules for tag.
 	retags []*tagPreprocessor
@@ -127,12 +127,12 @@ func (cfg *Config) parsePreprocessTag() (err error) {
 		logp = `parsePreprocessTag`
 
 		retag   *tagPreprocessor
-		httpUrl string
+		httpURL string
 		vals    []string
 	)
 
-	for _, httpUrl = range cfg.HttpUrl {
-		vals = strings.Split(httpUrl, "=>")
+	for _, httpURL = range cfg.HTTPURL {
+		vals = strings.Split(httpURL, `=>`)
 		if len(vals) != 2 {
 			continue
 		}

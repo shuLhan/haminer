@@ -5,6 +5,7 @@ package haminer
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -26,7 +27,7 @@ type InfluxdClient struct {
 
 // NewInfluxdClient will create, initialize, and return new Influxd client.
 func NewInfluxdClient(cfg *ConfigForwarder) (cl *InfluxdClient) {
-	if len(cfg.Url) == 0 {
+	if len(cfg.URL) == 0 {
 		return nil
 	}
 
@@ -62,7 +63,7 @@ func (cl *InfluxdClient) initConn() {
 
 // Forwards implement the Forwarder interface. It will write all logs to
 // Influxd.
-func (cl *InfluxdClient) Forwards(halogs []*HttpLog) {
+func (cl *InfluxdClient) Forwards(halogs []*HTTPLog) {
 	var (
 		logp = `influxdClient: Forwards`
 
@@ -77,7 +78,9 @@ func (cl *InfluxdClient) Forwards(halogs []*HttpLog) {
 		return
 	}
 
-	httpReq, err = http.NewRequest(http.MethodPost, cl.cfg.apiWrite, &cl.buf)
+	var ctx = context.Background()
+
+	httpReq, err = http.NewRequestWithContext(ctx, http.MethodPost, cl.cfg.apiWrite, &cl.buf)
 	if err != nil {
 		log.Printf(`%s: %s`, logp, err)
 		return
@@ -117,9 +120,9 @@ func (cl *InfluxdClient) Forwards(halogs []*HttpLog) {
 	fmt.Printf(`%s: response: %d %s\n`, logp, httpRes.StatusCode, rspBody)
 }
 
-func (cl *InfluxdClient) write(halogs []*HttpLog) (err error) {
+func (cl *InfluxdClient) write(halogs []*HTTPLog) (err error) {
 	var (
-		l *HttpLog
+		l *HTTPLog
 		k string
 		v string
 	)
