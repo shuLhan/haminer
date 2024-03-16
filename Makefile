@@ -1,14 +1,22 @@
 ## SPDX-FileCopyrightText: 2018 M. Shulhan <ms@kilabit.info>
 ## SPDX-License-Identifier: GPL-3.0-or-later
 
-.PHONY: all build test lint install serve-doc
+.PHONY: all build lint install serve-doc
 all: install
 
 build:
 	go build -v ./cmd/haminer
 
+## Run all tests and generate coverage as HTML.
+
+COVER_OUT:=cover.out
+COVER_HTML:=cover.html
+
+.PHONY: test
 test:
-	CGO_ENABLED=1 go test -race ./...
+	CGO_ENABLED=1 go test -failfast -timeout=1m -race \
+		-coverprofile=$(COVER_OUT) ./...
+	go tool cover -html=$(COVER_OUT) -o $(COVER_HTML)
 
 lint:
 	-fieldalignment ./...
