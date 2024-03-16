@@ -1,0 +1,4 @@
+[Network]
+Private = yes
+VirtualEthernet = yes
+Zone = haminer

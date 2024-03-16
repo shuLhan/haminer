@@ -1,0 +1,7 @@
+#!/bin/sh
+
+chown postgres:postgres /var/lib/postgres/data/postgresql.conf
+chown postgres:postgres /var/lib/postgres/data/pg_hba.conf
+
+sudo systemctl enable haproxy.service
+sudo systemctl enable postgresql.service

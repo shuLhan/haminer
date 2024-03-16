@@ -1,0 +1,27 @@
+#!/bin/sh
+
+rm -rf /var/lib/postgres/data
+mkdir /var/lib/postgres/data
+chown postgres:postgres /var/lib/postgres/data
+
+su - postgres \
+  -c "initdb \
+  --data-checksums \
+  --encoding=UTF8 \
+  --locale=C.UTF-8 \
+  --pgdata=/var/lib/postgres/data"
+
+mkdir -p /run/postgresql
+chown postgres:postgres /run/postgresql
+
+su - postgres \
+  -c "pg_ctl -D /var/lib/postgres/data start"
+
+su - postgres \
+  -c "psql -c \"CREATE ROLE haminer PASSWORD 'haminer' CREATEDB INHERIT LOGIN;\""
+
+su - postgres \
+  -c "psql -c \"CREATE DATABASE haminer OWNER haminer;\""
+
+su - postgres \
+  -c "pg_ctl -D /var/lib/postgres/data stop"

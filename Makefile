@@ -5,7 +5,7 @@
 all: install
 
 build:
-	go build -v ./cmd/haminer
+	go build -o ./_bin/ ./cmd/...
 
 ## Run all tests and generate coverage as HTML.
 
@@ -33,3 +33,22 @@ install: build test lint
 
 serve-doc:
 	ciigo serve _doc
+
+## Initialize local development by creating image using mkosi.
+## NOTE: only works on GNU/Linux OS.
+
+MACHINE_NAME:=haminer-test
+
+.PHONY: init-local-dev
+init-local-dev:
+	@echo ">>> Stopping container ..."
+	-sudo machinectl poweroff $(MACHINE_NAME)
+
+	@echo ">>> Building container $(MACHINE_NAME) ..."
+	sudo mkosi --directory=_ops/$(MACHINE_NAME)/ --force build
+
+	sudo machinectl --force import-tar _ops/$(MACHINE_NAME)/$(MACHINE_NAME)
+	sudo machinectl start $(MACHINE_NAME)
+
+	## Once the container is imported, we can enable and run them any
+	## time without rebuilding again.
