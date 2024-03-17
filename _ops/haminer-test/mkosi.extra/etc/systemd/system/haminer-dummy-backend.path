@@ -1,0 +1,9 @@
+[Unit]
+Description="Watch haminer-dummy-backend"
+
+[Path]
+PathChanged=/data/haminer/bin/haminer-dummy-backend
+Unit=systemctl-restart@%p.service
+
+[Install]
+WantedBy=default.target

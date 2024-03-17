@@ -1,0 +1,14 @@
+## SPDX-FileCopyrightText: 2024 M. Shulhan <ms@kilabit.info>
+## SPDX-License-Identifier: GPL-3.0-or-later
+
+[Unit]
+Description=haminer-dummy-backend
+After=syslog.target network.target
+
+[Service]
+ExecStart=/data/haminer/bin/haminer-dummy-backend
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

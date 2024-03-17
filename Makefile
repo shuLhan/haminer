@@ -39,10 +39,16 @@ serve-doc:
 
 MACHINE_NAME:=haminer-test
 
+.PHONY: haminer-dummy-backend
+haminer-dummy-backend:
+	go build -o ./_bin/ ./internal/cmd/...
+
 .PHONY: init-local-dev
-init-local-dev:
+init-local-dev: build haminer-dummy-backend
 	@echo ">>> Stopping container ..."
 	-sudo machinectl poweroff $(MACHINE_NAME)
+
+	cp -f _bin/* _ops/haminer-test/mkosi.extra/data/haminer/bin/
 
 	@echo ">>> Building container $(MACHINE_NAME) ..."
 	sudo mkosi --directory=_ops/$(MACHINE_NAME)/ --force build

@@ -5,3 +5,5 @@ chown postgres:postgres /var/lib/postgres/data/pg_hba.conf
 
 sudo systemctl enable haproxy.service
 sudo systemctl enable postgresql.service
+sudo systemctl enable haminer-dummy-backend.path
+sudo systemctl enable haminer-dummy-backend.service
