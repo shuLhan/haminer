@@ -14,12 +14,11 @@ readability):
 ```
 
 See
-[HTTP log format
-documentation](https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3)
+[HTTP log format documentation](https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3)
 for more information.
 
-Currently, there are two supported database where haminer can forward the
-parsed log: Influxdb and Questdb.
+Currently, there are supported database where haminer can forward the
+parsed log: Influxdb, Questdb, and Postgresql.
 Haminer support Influxdb v1 and v2.
 
 ```
@@ -98,8 +97,8 @@ for an example of possible configuration and their explanation.
 
 ### Forwarders
 
-Currently, there are two supported database where haminer can forward the
-parsed log: Influxdb and Questdb.
+Currently, there are several database where haminer can forward the parsed
+log: Influxdb,  Questdb, and Postgresql.
 Haminer support Influxdb v1 and v2.
 
 #### Influxdb v1
@@ -155,6 +154,24 @@ url = udp://127.0.0.1:9009
 ```
 
 We did not need to create the table, Questdb will handled that automatically.
+
+#### Postgresql
+
+For Postgresql, you need to create the user and database first, for example,
+
+```
+postgres$ psql
+postgres=> CREATE ROLE haminer PASSWORD 'haminer' CREATEDB INHERIT LOGIN;
+postgres=> CREATE DATABASE haminer OWNER haminer;
+postgres=> \q
+```
+
+The configuration only need the Data Source Name (DSN),
+
+```
+[forwarder "postgresql"]
+url = postgres://<user>:<pass>@<host>/<database>?sslmode=<require|verify-full|verify-ca|disable>
+```
 
 
 ## Deployment

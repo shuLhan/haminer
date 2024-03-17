@@ -17,8 +17,8 @@ See
 https://www.haproxy.com/documentation/hapee/1-8r1/onepage/#8.2.3[HTTP log format documentation]
 for more information.
 
-Currently, there are two supported database where haminer can forward the
-parsed log: Influxdb and Questdb.
+Currently, there are several database where haminer can forward the parsed
+log: Influxdb, Questdb, and Postgresql.
 Haminer support Influxdb v1 and v2.
 
 ----

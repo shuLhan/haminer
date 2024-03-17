@@ -1,13 +1,13 @@
 ## SPDX-FileCopyrightText: 2018 M. Shulhan <ms@kilabit.info>
 ## SPDX-License-Identifier: GPL-3.0-or-later
 
-.PHONY: all build lint install serve-doc
-all: install
+.PHONY: all build lint serve-doc
+all: build lint test
 
 build:
 	go build -o ./_bin/ ./cmd/...
 
-## Run all tests and generate coverage as HTML.
+##---- Run all tests and generate coverage as HTML.
 
 COVER_OUT:=cover.out
 COVER_HTML:=cover.html
@@ -17,6 +17,14 @@ test:
 	CGO_ENABLED=1 go test -failfast -timeout=1m -race \
 		-coverprofile=$(COVER_OUT) ./...
 	go tool cover -html=$(COVER_OUT) -o $(COVER_HTML)
+
+.PHONY: test-integration
+test-integration:
+	CGO_ENABLED=1 go test -failfast -timeout=1m -race \
+		-coverprofile=$(COVER_OUT) -integration ./...
+	go tool cover -html=$(COVER_OUT) -o $(COVER_HTML)
+
+##----
 
 lint:
 	-fieldalignment ./...
@@ -28,13 +36,13 @@ lint:
 		--disable bodyclose \
 		./...
 
-install: build test lint
+install:
 	go install -v ./cmd/haminer
 
 serve-doc:
 	ciigo serve _doc
 
-## Initialize local development by creating image using mkosi.
+##---- Initialize local development by creating image using mkosi.
 ## NOTE: only works on GNU/Linux OS.
 
 MACHINE_NAME:=haminer-test

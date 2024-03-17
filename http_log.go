@@ -5,12 +5,15 @@ package haminer
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	libsql "git.sr.ht/~shulhan/pakakeh.go/lib/sql"
 )
 
 const (
@@ -43,6 +46,8 @@ const (
 		`queue_backend=%d,` +
 		`bytes_read=%d`
 )
+
+const tableNameHTTPLog = `http_log`
 
 // HTTPLog contains the mapping of haproxy HTTP log format to Go struct.
 //
@@ -91,6 +96,42 @@ type HTTPLog struct {
 
 	ServerQueue  int32
 	BackendQueue int32
+}
+
+// listHTTPLog fetch all HTTPLog record from database.
+func listHTTPLog(dbc libsql.Session) (list []HTTPLog, err error) {
+	var (
+		logp    = `ListHTTPLog`
+		httpLog = HTTPLog{}
+		meta    = httpLog.generateSQLMeta(libsql.DriverNamePostgres, libsql.DMLKindSelect)
+	)
+
+	var q = fmt.Sprintf(`SELECT %s FROM %s ORDER BY request_date DESC;`,
+		meta.Names(), tableNameHTTPLog)
+
+	var rows *sql.Rows
+
+	rows, err = dbc.Query(q)
+	if err != nil {
+		return nil, fmt.Errorf(`%s: %w`, logp, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(meta.ListValue...)
+		if err != nil {
+			return nil, fmt.Errorf(`%s: %w`, logp, err)
+		}
+
+		var dup = httpLog
+		list = append(list, dup)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, fmt.Errorf(`%s: %w`, logp, err)
+	}
+
+	return list, nil
 }
 
 // ParseUDPPacket convert UDP packet (in bytes) to instance of HTTPLog.
@@ -350,6 +391,50 @@ func (httpLog *HTTPLog) parseConns(in []byte) (ok bool) {
 	}
 
 	return
+}
+
+func (httpLog *HTTPLog) generateSQLMeta(driver string, kind libsql.DMLKind) (meta *libsql.Meta) {
+	meta = libsql.NewMeta(driver, kind)
+
+	meta.Bind(`request_date`, &httpLog.RequestDate)
+	meta.Bind(`client_ip`, &httpLog.ClientIP)
+
+	meta.Bind(`frontend_name`, &httpLog.FrontendName)
+	meta.Bind(`backend_name`, &httpLog.BackendName)
+	meta.Bind(`server_name`, &httpLog.ServerName)
+
+	meta.Bind(`http_proto`, &httpLog.HTTPProto)
+	meta.Bind(`http_method`, &httpLog.HTTPMethod)
+	meta.Bind(`http_url`, &httpLog.HTTPURL)
+	meta.Bind(`http_query`, &httpLog.HTTPQuery)
+
+	meta.Bind(`header_request`, &httpLog.rawHeaderRequest)
+	meta.Bind(`header_response`, &httpLog.rawHeaderResponse)
+
+	meta.Bind(`cookie_request`, &httpLog.CookieRequest)
+	meta.Bind(`cookie_response`, &httpLog.CookieResponse)
+	meta.Bind(`termination_state`, &httpLog.TerminationState)
+
+	meta.Bind(`bytes_read`, &httpLog.BytesRead)
+	meta.Bind(`status_code`, &httpLog.StatusCode)
+	meta.Bind(`client_port`, &httpLog.ClientPort)
+
+	meta.Bind(`time_request`, &httpLog.TimeRequest)
+	meta.Bind(`time_wait`, &httpLog.TimeWait)
+	meta.Bind(`time_connect`, &httpLog.TimeConnect)
+	meta.Bind(`time_response`, &httpLog.TimeResponse)
+	meta.Bind(`time_all`, &httpLog.TimeAll)
+
+	meta.Bind(`conn_active`, &httpLog.ConnActive)
+	meta.Bind(`conn_frontend`, &httpLog.ConnFrontend)
+	meta.Bind(`conn_backend`, &httpLog.ConnBackend)
+	meta.Bind(`conn_server`, &httpLog.ConnServer)
+	meta.Bind(`retries`, &httpLog.Retries)
+
+	meta.Bind(`server_queue`, &httpLog.ServerQueue)
+	meta.Bind(`backend_queue`, &httpLog.BackendQueue)
+
+	return meta
 }
 
 func (httpLog *HTTPLog) parseQueue(in []byte) (ok bool) {

@@ -14,8 +14,9 @@ const (
 	influxdVersion1 = `v1`
 	influxdVersion2 = `v2`
 
-	forwarderKindInfluxd = `influxd`
-	forwarderKindQuestdb = `questdb`
+	forwarderKindInfluxd    = `influxd`
+	forwarderKindQuestdb    = `questdb`
+	forwarderKindPostgresql = `postgresql`
 )
 
 // ConfigForwarder contains configuration for forwarding the logs.

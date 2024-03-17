@@ -92,6 +92,16 @@ func (h *Haminer) createForwarder() {
 				continue
 			}
 			h.ff = append(h.ff, questc)
+
+		case forwarderKindPostgresql:
+			var pgc *forwarderPostgresql
+
+			pgc, err = newForwarderPostgresql(*fwCfg)
+			if err != nil {
+				log.Printf(`%s: %s: %s`, logp, fwName, err)
+				continue
+			}
+			h.ff = append(h.ff, pgc)
 		}
 	}
 }

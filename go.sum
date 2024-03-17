@@ -1,5 +1,7 @@
 git.sr.ht/~shulhan/pakakeh.go v0.53.2-0.20240315075343-713d51e4792f h1:bP4msj5TVm+kQ6GUt6QvwEXOVOzUk2MQc5c8bSto8sc=
 git.sr.ht/~shulhan/pakakeh.go v0.53.2-0.20240315075343-713d51e4792f/go.mod h1:tTHoHDHuBxj5q1zwpLZGCKrdc6i0I3sP8kPp+JEs16c=
+github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
+github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 golang.org/x/net v0.22.0 h1:9sGLhx7iRIHEiX0oAJ3MRZMUCElJgy7Br1nO+AMN3Tc=
 golang.org/x/net v0.22.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
 golang.org/x/sys v0.18.0 h1:DBdB3niSjOA/O0blCZBqDefyWNYveAYMNF1Wum0DYQ4=
