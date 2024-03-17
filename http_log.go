@@ -50,7 +50,8 @@ const (
 type HTTPLog struct {
 	Timestamp time.Time
 
-	RequestHeaders map[string]string
+	RequestHeaders  map[string]string
+	ResponseHeaders map[string]string
 
 	ClientIP string
 
@@ -58,18 +59,19 @@ type HTTPLog struct {
 	BackendName  string
 	ServerName   string
 
-	CookieReq string
-	CookieRsp string
-	TermState string
-
 	HTTPMethod string
 	HTTPURL    string
 	HTTPQuery  string
 	HTTPProto  string
 	tagHTTPURL string
 
+	CookieReq string
+	CookieRsp string
+	TermState string
+
 	BytesRead int64
 
+	HTTPStatus int32
 	ClientPort int32
 
 	TimeReq     int32
@@ -86,28 +88,152 @@ type HTTPLog struct {
 
 	QueueServer  int32
 	QueueBackend int32
-
-	HTTPStatus int32
 }
 
-// cleanPrefix will remove `<date-time> <process-name>[pid]: ` prefix (which
-// come from systemd/rsyslog) in input.
-func cleanPrefix(in []byte) bool {
-	start := bytes.IndexByte(in, '[')
-	if start < 0 {
-		return false
+// ParseUDPPacket convert UDP packet (in bytes) to instance of HTTPLog.
+//
+// It will return nil if UDP packet is nil, have zero length, or cannot be
+// parsed (rejected).
+func ParseUDPPacket(packet []byte, reqHeaders []string) (httpLog *HTTPLog) {
+	if len(packet) == 0 {
+		return nil
 	}
 
-	end := bytes.IndexByte(in[start:], ']')
+	if packet[0] == '<' {
+		var endIdx = bytes.IndexByte(packet, '>')
+		if endIdx < 0 {
+			return nil
+		}
+		packet = packet[endIdx+1:]
+	}
+
+	return Parse(packet, reqHeaders)
+}
+
+// Parse single line of HAProxy log format into HTTPLog.
+//
+// nolint: gocyclo
+func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
+	in = cleanPrefix(in)
+	if in == nil {
+		return nil
+	}
+
+	var ok bool
+
+	httpLog = &HTTPLog{}
+
+	httpLog.ClientIP, ok = parseToString(in, ':')
+	if !ok {
+		return nil
+	}
+
+	httpLog.ClientPort, ok = parseToInt32(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	// parse timestamp, remove '[' and parse until ']'
+	in = in[1:]
+	ts, ok := parseToString(in, ']')
+	if !ok {
+		return nil
+	}
+
+	var err error
+
+	httpLog.Timestamp, err = time.Parse(`2/Jan/2006:15:04:05.000`, ts)
+	if err != nil {
+		return nil
+	}
+
+	in = in[1:]
+	httpLog.FrontendName, ok = parseToString(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	httpLog.BackendName, ok = parseToString(in, '/')
+	if !ok {
+		return nil
+	}
+
+	httpLog.ServerName, ok = parseToString(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	ok = httpLog.parseConnectionTimes(in)
+	if !ok {
+		return nil
+	}
+
+	httpLog.HTTPStatus, ok = parseToInt32(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	httpLog.BytesRead, ok = parseToInt64(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	httpLog.CookieReq, ok = parseToString(in, ' ')
+	if !ok {
+		return nil
+	}
+	httpLog.CookieRsp, ok = parseToString(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	httpLog.TermState, ok = parseToString(in, ' ')
+	if !ok {
+		return nil
+	}
+
+	ok = httpLog.parseConns(in)
+	if !ok {
+		return nil
+	}
+
+	ok = httpLog.parseQueue(in)
+	if !ok {
+		return nil
+	}
+
+	if len(reqHeaders) > 0 {
+		ok = httpLog.parseRequestHeaders(in, reqHeaders)
+		if !ok {
+			return nil
+		}
+	}
+
+	in = in[1:]
+	ok = httpLog.parseHTTP(in)
+	if !ok {
+		return nil
+	}
+
+	return httpLog
+}
+
+// cleanPrefix will remove `<date-time> <process-name>[pid]: ` prefix which
+// come from systemd/rsyslog in input.
+func cleanPrefix(in []byte) []byte {
+	var start = bytes.IndexByte(in, '[')
+	if start < 0 {
+		return nil
+	}
+
+	var end = bytes.IndexByte(in[start:], ']')
 	if end < 0 {
-		return false
+		return nil
 	}
 
 	end = start + end + 3
 
-	copy(in[0:], in[end:])
-
-	return true
+	return in[end:]
 }
 
 func parseToString(in []byte, sep byte) (string, bool) {
@@ -165,7 +291,7 @@ func parseToInt64(in []byte, sep byte) (int64, bool) {
 	return v, true
 }
 
-func (httpLog *HTTPLog) parseTimes(in []byte) (ok bool) {
+func (httpLog *HTTPLog) parseConnectionTimes(in []byte) (ok bool) {
 	httpLog.TimeReq, ok = parseToInt32(in, '/')
 	if !ok {
 		return
@@ -285,152 +411,6 @@ func (httpLog *HTTPLog) parseHTTP(in []byte) (ok bool) {
 	httpLog.HTTPProto, ok = parseToString(in, '"')
 
 	return ok
-}
-
-// Parse will parse one line of HAProxy log format into HTTPLog.
-//
-// nolint: gocyclo
-func (httpLog *HTTPLog) Parse(in []byte, reqHeaders []string) (ok bool) {
-	var err error
-
-	// Remove prefix from systemd/rsyslog
-	ok = cleanPrefix(in)
-	if !ok {
-		return
-	}
-
-	// parse client IP
-	httpLog.ClientIP, ok = parseToString(in, ':')
-	if !ok {
-		return
-	}
-
-	// parse client port
-	httpLog.ClientPort, ok = parseToInt32(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse timestamp, remove '[' and parse until ']'
-	in = in[1:]
-	ts, ok := parseToString(in, ']')
-	if !ok {
-		return
-	}
-
-	httpLog.Timestamp, err = time.Parse(`2/Jan/2006:15:04:05.000`, ts)
-	if err != nil {
-		return false
-	}
-
-	// parse frontend name
-	in = in[1:]
-	httpLog.FrontendName, ok = parseToString(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse backend name
-	httpLog.BackendName, ok = parseToString(in, '/')
-	if !ok {
-		return
-	}
-
-	// parse server name
-	httpLog.ServerName, ok = parseToString(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse times
-	ok = httpLog.parseTimes(in)
-	if !ok {
-		return
-	}
-
-	// parse HTTP status code
-	httpLog.HTTPStatus, ok = parseToInt32(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse bytes read
-	httpLog.BytesRead, ok = parseToInt64(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse request cookie
-	httpLog.CookieReq, ok = parseToString(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse response cookie
-	httpLog.CookieRsp, ok = parseToString(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse termination state
-	httpLog.TermState, ok = parseToString(in, ' ')
-	if !ok {
-		return
-	}
-
-	// parse number of connections
-	ok = httpLog.parseConns(in)
-	if !ok {
-		return
-	}
-
-	// parse number of queue state
-	ok = httpLog.parseQueue(in)
-	if !ok {
-		return
-	}
-
-	if len(reqHeaders) > 0 {
-		ok = httpLog.parseRequestHeaders(in, reqHeaders)
-		if !ok {
-			return
-		}
-	}
-
-	// parse HTTP
-	in = in[1:]
-	ok = httpLog.parseHTTP(in)
-
-	return ok
-}
-
-// ParseUDPPacket will convert UDP packet (in bytes) to instance of
-// HTTPLog.
-//
-// It will return nil and false if UDP packet is nil, have zero length, or
-// cannot be parsed (rejected).
-func (httpLog *HTTPLog) ParseUDPPacket(packet []byte, reqHeaders []string) bool {
-	if len(packet) == 0 {
-		return false
-	}
-
-	var (
-		endIdx int
-		in     []byte
-	)
-
-	if packet[0] == '<' {
-		endIdx = bytes.IndexByte(packet, '>')
-		if endIdx < 0 {
-			return false
-		}
-
-		in = packet[endIdx+1:]
-	} else {
-		in = packet
-	}
-
-	return httpLog.Parse(in, reqHeaders)
 }
 
 // writeIlp write the HTTP log as Influxdb Line Protocol.

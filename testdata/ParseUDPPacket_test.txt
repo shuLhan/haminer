@@ -1,0 +1,37 @@
+Test data for ParseUDPPacket.
+
+>>> http_log_0000
+<134>Mar 17 05:08:28 haproxy[371]: 169.254.63.64:52722 [17/Mar/2024:05:08:28.886] fe-http be-http/be-http2 10/20/30/40/50 200 149 - - ---- 1/1/2/3/4 5/6 "GET / HTTP/1.1"
+
+<<< http_log_0000
+{
+  "Timestamp": "2024-03-17T05:08:28.886Z",
+  "RequestHeaders": null,
+  "ResponseHeaders": null,
+  "ClientIP": "169.254.63.64",
+  "FrontendName": "fe-http",
+  "BackendName": "be-http",
+  "ServerName": "be-http2",
+  "HTTPMethod": "GET",
+  "HTTPURL": "/",
+  "HTTPQuery": "",
+  "HTTPProto": "HTTP/1.1",
+  "CookieReq": "-",
+  "CookieRsp": "-",
+  "TermState": "----",
+  "BytesRead": 149,
+  "HTTPStatus": 200,
+  "ClientPort": 52722,
+  "TimeReq": 10,
+  "TimeWait": 20,
+  "TimeConnect": 30,
+  "TimeRsp": 40,
+  "TimeAll": 50,
+  "ConnActive": 1,
+  "ConnFrontend": 1,
+  "ConnBackend": 2,
+  "ConnServer": 3,
+  "ConnRetries": 4,
+  "QueueServer": 5,
+  "QueueBackend": 6
+}

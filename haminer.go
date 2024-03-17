@@ -118,9 +118,6 @@ func (h *Haminer) Start() (err error) {
 
 // filter will return true if log is accepted; otherwise it will return false.
 func (h *Haminer) filter(halog *HTTPLog) bool {
-	if halog == nil {
-		return false
-	}
 	if halog.BackendName == `-` {
 		return false
 	}
@@ -153,10 +150,8 @@ func (h *Haminer) consume() {
 			continue
 		}
 
-		halog = &HTTPLog{}
-
-		ok = halog.ParseUDPPacket(packet[:n], h.cfg.RequestHeaders)
-		if !ok {
+		halog = ParseUDPPacket(packet[:n], h.cfg.RequestHeaders)
+		if halog == nil {
 			continue
 		}
 
