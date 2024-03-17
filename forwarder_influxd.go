@@ -142,8 +142,8 @@ func (cl *forwarderInfluxd) write(halogs []*HTTPLog) (err error) {
 			l.HTTPURL,
 			l.HTTPQuery,
 			l.HTTPProto,
-			l.HTTPStatus,
-			l.TermState,
+			l.StatusCode,
+			l.TerminationState,
 			l.ClientIP,
 			l.ClientPort,
 		)
@@ -151,7 +151,7 @@ func (cl *forwarderInfluxd) write(halogs []*HTTPLog) (err error) {
 			return err
 		}
 
-		for k, v = range l.RequestHeaders {
+		for k, v = range l.HeaderRequest {
 			_, err = fmt.Fprintf(&cl.buf, ",%s=%s", k, v)
 			if err != nil {
 				return err
@@ -161,18 +161,18 @@ func (cl *forwarderInfluxd) write(halogs []*HTTPLog) (err error) {
 		cl.buf.WriteByte(' ')
 
 		_, err = fmt.Fprintf(&cl.buf, influxdFields,
-			l.TimeReq, l.TimeWait, l.TimeConnect,
-			l.TimeRsp, l.TimeAll,
+			l.TimeRequest, l.TimeWait, l.TimeConnect,
+			l.TimeResponse, l.TimeAll,
 			l.ConnActive, l.ConnFrontend, l.ConnBackend,
-			l.ConnServer, l.ConnRetries,
-			l.QueueServer, l.QueueBackend,
+			l.ConnServer, l.Retries,
+			l.ServerQueue, l.BackendQueue,
 			l.BytesRead,
 		)
 		if err != nil {
 			return err
 		}
 
-		_, err = fmt.Fprintf(&cl.buf, " %d\n", l.Timestamp.UnixNano())
+		_, err = fmt.Fprintf(&cl.buf, " %d\n", l.RequestDate.UnixNano())
 		if err != nil {
 			return err
 		}

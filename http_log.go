@@ -48,10 +48,13 @@ const (
 //
 // Reference: https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#8.2.3
 type HTTPLog struct {
-	Timestamp time.Time
+	RequestDate time.Time
 
-	RequestHeaders  map[string]string
-	ResponseHeaders map[string]string
+	HeaderRequest  map[string]string
+	HeaderResponse map[string]string
+
+	rawHeaderRequest  string
+	rawHeaderResponse string
 
 	ClientIP string
 
@@ -59,35 +62,35 @@ type HTTPLog struct {
 	BackendName  string
 	ServerName   string
 
+	HTTPProto  string
 	HTTPMethod string
 	HTTPURL    string
 	HTTPQuery  string
-	HTTPProto  string
 	tagHTTPURL string
 
-	CookieReq string
-	CookieRsp string
-	TermState string
+	CookieRequest    string
+	CookieResponse   string
+	TerminationState string
 
 	BytesRead int64
 
-	HTTPStatus int32
+	StatusCode int32
 	ClientPort int32
 
-	TimeReq     int32
-	TimeWait    int32
-	TimeConnect int32
-	TimeRsp     int32
-	TimeAll     int32
+	TimeRequest  int32
+	TimeWait     int32
+	TimeConnect  int32
+	TimeResponse int32
+	TimeAll      int32
 
 	ConnActive   int32
 	ConnFrontend int32
 	ConnBackend  int32
 	ConnServer   int32
-	ConnRetries  int32
+	Retries      int32
 
-	QueueServer  int32
-	QueueBackend int32
+	ServerQueue  int32
+	BackendQueue int32
 }
 
 // ParseUDPPacket convert UDP packet (in bytes) to instance of HTTPLog.
@@ -142,7 +145,7 @@ func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
 
 	var err error
 
-	httpLog.Timestamp, err = time.Parse(`2/Jan/2006:15:04:05.000`, ts)
+	httpLog.RequestDate, err = time.Parse(`2/Jan/2006:15:04:05.000`, ts)
 	if err != nil {
 		return nil
 	}
@@ -168,7 +171,7 @@ func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
 		return nil
 	}
 
-	httpLog.HTTPStatus, ok = parseToInt32(in, ' ')
+	httpLog.StatusCode, ok = parseToInt32(in, ' ')
 	if !ok {
 		return nil
 	}
@@ -178,16 +181,16 @@ func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
 		return nil
 	}
 
-	httpLog.CookieReq, ok = parseToString(in, ' ')
+	httpLog.CookieRequest, ok = parseToString(in, ' ')
 	if !ok {
 		return nil
 	}
-	httpLog.CookieRsp, ok = parseToString(in, ' ')
+	httpLog.CookieResponse, ok = parseToString(in, ' ')
 	if !ok {
 		return nil
 	}
 
-	httpLog.TermState, ok = parseToString(in, ' ')
+	httpLog.TerminationState, ok = parseToString(in, ' ')
 	if !ok {
 		return nil
 	}
@@ -203,7 +206,7 @@ func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
 	}
 
 	if len(reqHeaders) > 0 {
-		ok = httpLog.parseRequestHeaders(in, reqHeaders)
+		ok = httpLog.parseHeaderRequest(in, reqHeaders)
 		if !ok {
 			return nil
 		}
@@ -292,7 +295,7 @@ func parseToInt64(in []byte, sep byte) (int64, bool) {
 }
 
 func (httpLog *HTTPLog) parseConnectionTimes(in []byte) (ok bool) {
-	httpLog.TimeReq, ok = parseToInt32(in, '/')
+	httpLog.TimeRequest, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
@@ -307,7 +310,7 @@ func (httpLog *HTTPLog) parseConnectionTimes(in []byte) (ok bool) {
 		return
 	}
 
-	httpLog.TimeRsp, ok = parseToInt32(in, '/')
+	httpLog.TimeResponse, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
@@ -341,7 +344,7 @@ func (httpLog *HTTPLog) parseConns(in []byte) (ok bool) {
 		return
 	}
 
-	httpLog.ConnRetries, ok = parseToInt32(in, ' ')
+	httpLog.Retries, ok = parseToInt32(in, ' ')
 	if !ok {
 		return
 	}
@@ -350,20 +353,20 @@ func (httpLog *HTTPLog) parseConns(in []byte) (ok bool) {
 }
 
 func (httpLog *HTTPLog) parseQueue(in []byte) (ok bool) {
-	httpLog.QueueServer, ok = parseToInt32(in, '/')
+	httpLog.ServerQueue, ok = parseToInt32(in, '/')
 	if !ok {
 		return
 	}
 
-	httpLog.QueueBackend, ok = parseToInt32(in, ' ')
+	httpLog.BackendQueue, ok = parseToInt32(in, ' ')
 
 	return
 }
 
-// parserRequestHeaders parse the request header values in log file.
+// parserHeaderRequest parse the request header values in log file.
 // The request headers start with '{' and end with '}'.
 // Each header is separated by '|'.
-func (httpLog *HTTPLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok bool) {
+func (httpLog *HTTPLog) parseHeaderRequest(in []byte, reqHeaders []string) (ok bool) {
 	if in[0] != '{' {
 		// Skip if we did not find the beginning.
 		return true
@@ -375,16 +378,17 @@ func (httpLog *HTTPLog) parseRequestHeaders(in []byte, reqHeaders []string) (ok 
 		return
 	}
 
-	sep := []byte{'|'}
-	bheaders := bytes.Split(in[1:end], sep)
+	httpLog.rawHeaderRequest = string(in[1:end])
 
-	if len(reqHeaders) != len(bheaders) {
+	var headers = strings.Split(httpLog.rawHeaderRequest, `|`)
+
+	if len(reqHeaders) != len(headers) {
 		return
 	}
 
-	httpLog.RequestHeaders = make(map[string]string)
+	httpLog.HeaderRequest = make(map[string]string)
 	for x, name := range reqHeaders {
-		httpLog.RequestHeaders[name] = string(bheaders[x])
+		httpLog.HeaderRequest[name] = headers[x]
 	}
 
 	copy(in, in[end+2:])
@@ -435,8 +439,8 @@ func (httpLog *HTTPLog) writeIlp(out io.Writer) (err error) {
 		httpLog.HTTPURL,
 		httpLog.HTTPQuery,
 		httpLog.HTTPProto,
-		httpLog.HTTPStatus,
-		httpLog.TermState,
+		httpLog.StatusCode,
+		httpLog.TerminationState,
 		httpLog.ClientIP,
 		httpLog.ClientPort,
 	)
@@ -444,7 +448,7 @@ func (httpLog *HTTPLog) writeIlp(out io.Writer) (err error) {
 		return err
 	}
 
-	for k, v = range httpLog.RequestHeaders {
+	for k, v = range httpLog.HeaderRequest {
 		_, err = fmt.Fprintf(out, `,%s=%s`, k, v)
 		if err != nil {
 			return err
@@ -457,18 +461,18 @@ func (httpLog *HTTPLog) writeIlp(out io.Writer) (err error) {
 	}
 
 	_, err = fmt.Fprintf(out, influxdFields,
-		httpLog.TimeReq, httpLog.TimeWait, httpLog.TimeConnect,
-		httpLog.TimeRsp, httpLog.TimeAll,
+		httpLog.TimeRequest, httpLog.TimeWait, httpLog.TimeConnect,
+		httpLog.TimeResponse, httpLog.TimeAll,
 		httpLog.ConnActive, httpLog.ConnFrontend, httpLog.ConnBackend,
-		httpLog.ConnServer, httpLog.ConnRetries,
-		httpLog.QueueServer, httpLog.QueueBackend,
+		httpLog.ConnServer, httpLog.Retries,
+		httpLog.ServerQueue, httpLog.BackendQueue,
 		httpLog.BytesRead,
 	)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(out, " %d\n", httpLog.Timestamp.UnixNano())
+	_, err = fmt.Fprintf(out, " %d\n", httpLog.RequestDate.UnixNano())
 	if err != nil {
 		return err
 	}
