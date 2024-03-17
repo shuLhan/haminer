@@ -18,21 +18,21 @@ const (
 	defQuestdbPort = 9009
 )
 
-// questdbClient client for questdb.
-type questdbClient struct {
+// forwarderQuestdb client for questdb.
+type forwarderQuestdb struct {
 	conn net.Conn
 	buf  bytes.Buffer
 }
 
-// newQuestdbClient create and initialize client connection using the URL in
+// newForwarderQuestdb create and initialize client connection using the URL in
 // the ConfigForwarder.
-func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
+func newForwarderQuestdb(cfg *ConfigForwarder) (questc *forwarderQuestdb, err error) {
 	if cfg == nil || len(cfg.URL) == 0 {
 		return nil, nil
 	}
 
 	var (
-		logp    = `newQuestdbClient`
+		logp    = `newForwarderQuestdb`
 		timeout = 10 * time.Second
 
 		surl    *url.URL
@@ -57,7 +57,7 @@ func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
 		address = fmt.Sprintf(`%s:%d`, address, port)
 	}
 
-	questc = &questdbClient{}
+	questc = &forwarderQuestdb{}
 
 	questc.conn, err = net.DialTimeout(surl.Scheme, address, timeout)
 	if err != nil {
@@ -69,9 +69,9 @@ func newQuestdbClient(cfg *ConfigForwarder) (questc *questdbClient, err error) {
 
 // Forwards implement the Forwarder interface.
 // It will write all logs to questdb.
-func (questc *questdbClient) Forwards(logs []*HTTPLog) {
+func (questc *forwarderQuestdb) Forwards(logs []*HTTPLog) {
 	var (
-		logp = `questdbClient: Forwards`
+		logp = `forwarderQuestdb: Forwards`
 		now  = time.Now()
 
 		httpLog *HTTPLog

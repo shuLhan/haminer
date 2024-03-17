@@ -64,7 +64,8 @@ func TestLoad(t *testing.T) {
 		in:   "testdata/haminer.conf",
 		exp: &Config{
 			Forwarders: map[string]*ConfigForwarder{
-				`influxd`: &ConfigForwarder{
+				forwarderKindInfluxd: &ConfigForwarder{
+					kind:        forwarderKindInfluxd,
 					Version:     `v2`,
 					URL:         `http://127.0.0.1:8086`,
 					Org:         `kilabit.info`,

@@ -14,12 +14,13 @@ const (
 	influxdVersion1 = `v1`
 	influxdVersion2 = `v2`
 
-	forwarderInfluxd = `influxd`
-	forwarderQuestdb = `questdb`
+	forwarderKindInfluxd = `influxd`
+	forwarderKindQuestdb = `questdb`
 )
 
 // ConfigForwarder contains configuration for forwarding the logs.
 type ConfigForwarder struct {
+	kind    string
 	Version string `ini:"::version"`
 
 	URL         string `ini:"::url"`
@@ -28,12 +29,12 @@ type ConfigForwarder struct {
 
 	Bucket string `ini:"::bucket"`
 
-	// Fields for HTTP API v1.
+	// Fields for Influxd HTTP API v1.
 
 	User string `ini:"::user"`
 	Pass string `ini:"::pass"`
 
-	// Fields for HTTP API v2.
+	// Fields for Influxd HTTP API v2.
 
 	Org   string `ini:"::org"`
 	Token string `ini:"::token"`
@@ -41,11 +42,13 @@ type ConfigForwarder struct {
 
 // init check, validate, and initialize the configuration values.
 func (cfg *ConfigForwarder) init(fwName string) (err error) {
+	cfg.kind = fwName
+
 	if len(cfg.URL) == 0 {
 		return
 	}
 
-	if fwName == forwarderInfluxd {
+	if fwName == forwarderKindInfluxd {
 		return cfg.initInfluxd()
 	}
 

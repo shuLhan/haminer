@@ -71,19 +71,19 @@ func (h *Haminer) createForwarder() {
 	)
 
 	for fwName, fwCfg = range h.cfg.Forwarders {
-		var influxc *InfluxdClient
+		var influxc *forwarderInfluxd
 
 		switch fwName {
-		case forwarderInfluxd:
-			influxc = NewInfluxdClient(fwCfg)
+		case forwarderKindInfluxd:
+			influxc = newForwarderInfluxd(fwCfg)
 			if influxc != nil {
 				h.ff = append(h.ff, influxc)
 			}
 
-		case forwarderQuestdb:
-			var questc *questdbClient
+		case forwarderKindQuestdb:
+			var questc *forwarderQuestdb
 
-			questc, err = newQuestdbClient(fwCfg)
+			questc, err = newForwarderQuestdb(fwCfg)
 			if err != nil {
 				log.Printf(`%s: %s: %s`, logp, fwName, err)
 				continue
