@@ -4,7 +4,10 @@
 .PHONY: all build lint serve-doc
 all: build lint test
 
-build:
+embed:
+	go run ./internal/cmd/memfs
+
+build: embed
 	go build -o ./_bin/ ./cmd/...
 
 ##---- Run all tests and generate coverage as HTML.

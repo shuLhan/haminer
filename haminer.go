@@ -9,6 +9,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"git.sr.ht/~shulhan/pakakeh.go/lib/memfs"
 )
 
 const (
@@ -19,6 +21,11 @@ const (
 var (
 	_hostname string
 )
+
+// memfsDatabase embed all ".sql" files in directory _database.
+// It will be used to migrate the database when using postgresql as
+// forwarder.
+var memfsDatabase *memfs.MemFS
 
 // Haminer define the log consumer and producer.
 type Haminer struct {
@@ -43,7 +50,9 @@ func initHostname() {
 
 // NewHaminer create, initialize, and return new Haminer instance. If config
 // parameter is nil, it will use the default options.
-func NewHaminer(cfg *Config) (h *Haminer) {
+func NewHaminer(cfg *Config) (h *Haminer, err error) {
+	var logp = `NewHaminer`
+
 	if cfg == nil {
 		cfg = NewConfig()
 	}
@@ -56,18 +65,20 @@ func NewHaminer(cfg *Config) (h *Haminer) {
 
 	initHostname()
 
-	h.createForwarder()
+	err = h.createForwarder()
+	if err != nil {
+		return nil, fmt.Errorf(`%s: %w`, logp, err)
+	}
 
-	return
+	return h, nil
 }
 
-func (h *Haminer) createForwarder() {
+func (h *Haminer) createForwarder() (err error) {
 	var (
 		logp = `createForwarder`
 
 		fwCfg  *ConfigForwarder
 		fwName string
-		err    error
 	)
 
 	for fwName, fwCfg = range h.cfg.Forwarders {
@@ -94,6 +105,10 @@ func (h *Haminer) createForwarder() {
 			h.ff = append(h.ff, questc)
 
 		case forwarderKindPostgresql:
+			if fwCfg.URL == `` {
+				continue
+			}
+
 			var pgc *forwarderPostgresql
 
 			pgc, err = newForwarderPostgresql(*fwCfg)
@@ -101,9 +116,16 @@ func (h *Haminer) createForwarder() {
 				log.Printf(`%s: %s: %s`, logp, fwName, err)
 				continue
 			}
+
+			err = pgc.conn.Migrate(``, memfsDatabase)
+			if err != nil {
+				return fmt.Errorf(`%s: %w`, logp, err)
+			}
+
 			h.ff = append(h.ff, pgc)
 		}
 	}
+	return nil
 }
 
 // Start will listen for UDP packet and start consuming log, parse, and

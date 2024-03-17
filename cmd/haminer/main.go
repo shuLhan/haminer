@@ -43,7 +43,12 @@ func main() {
 
 	fmt.Printf("Starting Haminer with config: %+v\n", cfg)
 
-	h := haminer.NewHaminer(cfg)
+	var h *haminer.Haminer
+
+	h, err = haminer.NewHaminer(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	signal.Notify(chSignal, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
