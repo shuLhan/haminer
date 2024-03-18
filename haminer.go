@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"git.sr.ht/~shulhan/pakakeh.go/lib/memfs"
+	"git.sr.ht/~shulhan/pakakeh.go/lib/mlog"
 )
 
 const (
@@ -29,8 +30,11 @@ var memfsDatabase *memfs.MemFS
 
 // Haminer define the log consumer and producer.
 type Haminer struct {
-	cfg       *Config
-	udpConn   *net.UDPConn
+	cfg     *Config
+	udpConn *net.UDPConn
+
+	httpd *httpServer
+
 	httpLogq  chan *HTTPLog
 	ff        []Forwarder
 	isRunning bool
@@ -64,6 +68,13 @@ func NewHaminer(cfg *Config) (h *Haminer, err error) {
 	}
 
 	initHostname()
+
+	if len(cfg.WuiAddress) != 0 {
+		h.httpd, err = newHTTPServer(cfg)
+		if err != nil {
+			return nil, fmt.Errorf(`%s: %w`, logp, err)
+		}
+	}
 
 	err = h.createForwarder()
 	if err != nil {
@@ -131,14 +142,20 @@ func (h *Haminer) createForwarder() (err error) {
 // Start will listen for UDP packet and start consuming log, parse, and
 // publish it to analytic server.
 func (h *Haminer) Start() (err error) {
-	udpAddr := &net.UDPAddr{
+	var logp = `Start`
+
+	var udpAddr = &net.UDPAddr{
 		IP:   net.ParseIP(h.cfg.listenAddr),
 		Port: h.cfg.listenPort,
 	}
 
 	h.udpConn, err = net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		return
+		return fmt.Errorf(`%s: %w`, logp, err)
+	}
+
+	if h.httpd != nil {
+		h.httpd.start()
 	}
 
 	h.isRunning = true
@@ -180,6 +197,14 @@ func (h *Haminer) consume() {
 		n, err = h.udpConn.Read(packet)
 		if err != nil {
 			continue
+		}
+
+		if h.httpd != nil {
+			select {
+			case h.httpd.rawlogq <- string(packet[:n]):
+			default:
+				// Log queue is full.
+			}
 		}
 
 		halog = ParseUDPPacket(packet[:n], h.cfg.RequestHeaders)
@@ -229,10 +254,23 @@ func (h *Haminer) produce() {
 
 // Stop will close UDP server and clear all resources.
 func (h *Haminer) Stop() {
+	var (
+		logp = `Stop`
+
+		err error
+	)
+
+	if h.httpd != nil {
+		err = h.httpd.Stop(1 * time.Second)
+		if err != nil {
+			mlog.Errf(`%s: %s`, logp, err)
+		}
+	}
+
 	h.isRunning = false
 
 	if h.udpConn != nil {
-		err := h.udpConn.Close()
+		err = h.udpConn.Close()
 		if err != nil {
 			log.Println(err)
 		}

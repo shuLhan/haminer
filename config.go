@@ -29,6 +29,9 @@ type Config struct {
 
 	listenAddr string
 
+	// WuiAddress the address to serve for web user interface.
+	WuiAddress string `ini:"haminer::wui_address"`
+
 	// AcceptBackend list of backend to be filtered.
 	AcceptBackend []string `ini:"haminer::accept_backend"`
 
@@ -45,6 +48,9 @@ type Config struct {
 	ForwardInterval time.Duration `ini:"haminer::forward_interval"`
 
 	listenPort int
+
+	// IsDevelopment only enabled during local development.
+	IsDevelopment bool
 }
 
 // NewConfig will create, initialize, and return new config with default

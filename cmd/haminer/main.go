@@ -22,17 +22,16 @@ const (
 func main() {
 	var (
 		chSignal = make(chan os.Signal, 1)
+		cfg      = haminer.NewConfig()
 
-		cfg        *haminer.Config
 		err        error
 		flagConfig string
 	)
 
 	log.SetPrefix(defLogPrefix)
 
-	cfg = haminer.NewConfig()
-
 	flag.StringVar(&flagConfig, `config`, defConfig, `Path to configuration`)
+	flag.BoolVar(&cfg.IsDevelopment, `dev`, false, `Enable development mode`)
 
 	flag.Parse()
 

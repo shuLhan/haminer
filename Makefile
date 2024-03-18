@@ -1,12 +1,17 @@
 ## SPDX-FileCopyrightText: 2018 M. Shulhan <ms@kilabit.info>
 ## SPDX-License-Identifier: GPL-3.0-or-later
 
-.PHONY: all build lint serve-doc
+.PHONY: all lint serve-doc
 all: build lint test
 
 embed:
 	go run ./internal/cmd/memfs
 
+.PHONY: build-wui
+build-wui:
+	tsc --project _wui
+
+.PHONY: build
 build: embed
 	go build -o ./_bin/ ./cmd/...
 
@@ -45,6 +50,15 @@ install:
 serve-doc:
 	ciigo serve _doc
 
+
+##---- Run haminer for local development.
+
+.PHONY: dev
+dev:
+	go run ./cmd/haminer -dev \
+		-config _ops/haminer-test/mkosi.extra/etc/haminer.conf
+
+
 ##---- Initialize local development by creating image using mkosi.
 ## NOTE: only works on GNU/Linux OS.
 
@@ -64,7 +78,7 @@ init-local-dev: build haminer-dummy-backend
 	@echo ">>> Building container $(MACHINE_NAME) ..."
 	sudo mkosi --directory=_ops/$(MACHINE_NAME)/ --force build
 
-	sudo machinectl --force import-tar _ops/$(MACHINE_NAME)/$(MACHINE_NAME)
+	sudo machinectl --force import-fs _ops/$(MACHINE_NAME)/$(MACHINE_NAME)
 	sudo machinectl start $(MACHINE_NAME)
 
 	## Once the container is imported, we can enable and run them any
