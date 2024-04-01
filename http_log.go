@@ -207,6 +207,10 @@ func Parse(in []byte, reqHeaders []string) (httpLog *HTTPLog) {
 		return nil
 	}
 
+	if httpLog.ServerName == `<NOSRV>` {
+		return nil
+	}
+
 	ok = httpLog.parseConnectionTimes(in)
 	if !ok {
 		return nil
