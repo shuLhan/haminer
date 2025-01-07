@@ -37,12 +37,7 @@ test-integration:
 lint:
 	-fieldalignment ./...
 	-shadow ./...
-	-golangci-lint run \
-		--presets bugs,metalinter,performance,unused \
-		--disable exhaustive \
-		--disable musttag \
-		--disable bodyclose \
-		./...
+	go vet ./...
 
 install:
 	go install -v ./cmd/haminer
