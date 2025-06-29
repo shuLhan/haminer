@@ -1,6 +1,6 @@
 # haminer
 
-Library and program to parse and forward HAProxy logs.
+`haminer` is a library and program to parse and forward HAProxy HTTP logs.
 
 The HTTP logs is HTTP request that received by HAProxy frontend and forwarded
 to backend.
@@ -218,11 +218,23 @@ $ sudo systemctl start  haminer
 ```
 
 
+##  Development
+
+<https://git.sr.ht/~shulhan/haminer>:: Link to the source code.
+
+<https://lists.sr.ht/~shulhan/haminer>:: Link to development
+and discussion.
+
+<https://todo.sr.ht/~shulhan/haminer>:: Link to submit an issue,
+feedback, or request for new feature.
+
+[Changelog](https://kilabit.info/project/haminer/CHANGELOG.html):: History
+of each release.
+
+
 ##  License
 
-```
-haminer - Library and program to parse and forward HAProxy logs.
-Copyright (C) 2018-2024 M. Shulhan <ms@kilabit.info>
+Copyright (C) 2018-2025 M. Shulhan &lt;ms@kilabit.info&gt;
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -236,4 +248,3 @@ details.
 You should have received a copy of the GNU General Public License along with
 this program.
 If not, see <http://www.gnu.org/licenses/>.
-```
