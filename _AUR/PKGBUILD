@@ -41,7 +41,7 @@ build() {
 package() {
 	cd "$pkgname"
 	install -Dm644 ./cmd/haminer/haminer.conf     $pkgdir/etc/haminer.conf
-	install -Dm755 ./haminer                      $pkgdir/usr/bin/haminer
+	install -Dm755 ./_bin/haminer                 $pkgdir/usr/bin/haminer
 	install -Dm644 ./cmd/haminer/haminer.service  $pkgdir/usr/lib/systemd/system/haminer.service
 	install -Dm644 COPYING                        $pkgdir/usr/share/licenses/haminer/COPYING
 }
