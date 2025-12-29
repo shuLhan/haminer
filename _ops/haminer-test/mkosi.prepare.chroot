@@ -1,4 +1,7 @@
 #!/bin/sh
+# SPDX-FileCopyrightText: 2024 M. Shulhan <ms@kilabit.info>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 rm -rf /var/lib/postgres/data
 mkdir /var/lib/postgres/data

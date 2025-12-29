@@ -1,0 +1,22 @@
+version = 1
+SPDX-PackageName = "haminer"
+SPDX-PackageSupplier = "M. Shulhan <ms@kilabit.info>"
+SPDX-PackageDownloadLocation = "https://git.sr.ht/~shulhan/haminer"
+
+[[annotations]]
+path = "_AUR/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 M. Shulhan <ms@kilabit.info>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = "testdata/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 M. Shulhan <ms@kilabit.info>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = "go.**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 M. Shulhan <ms@kilabit.info>"
+SPDX-License-Identifier = "GPL-3.0-or-later"

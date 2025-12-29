@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 M. Shulhan <ms@kilabit.info>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package main
 
 import (
@@ -18,6 +22,11 @@ func embedDatabase() {
 			PackageName: `haminer`,
 			VarName:     `memfsDatabase`,
 			GoFileName:  `memfs_database.go`,
+			CommentHeader: `// SPDX-FileCopyrightText: 2024 M. Shulhan <ms@kilabit.info>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+`,
 		},
 		Root: `_database`,
 		Includes: []string{
@@ -47,6 +56,11 @@ func embedWui() {
 			PackageName: `haminer`,
 			VarName:     `memfsWUI`,
 			GoFileName:  `memfs_wui.go`,
+			CommentHeader: `// SPDX-FileCopyrightText: 2024 M. Shulhan <ms@kilabit.info>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+`,
 		},
 		Root: `_wui`,
 		Includes: []string{

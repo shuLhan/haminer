@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019 M. Shulhan <ms@kilabit.info>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # haminer
 
 `haminer` is a library and program to parse and forward HAProxy HTTP logs.

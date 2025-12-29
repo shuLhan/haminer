@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 M. Shulhan <ms@kilabit.info>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 module git.sr.ht/~shulhan/haminer
 
 go 1.24.0
