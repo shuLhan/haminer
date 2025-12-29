@@ -7,7 +7,91 @@
 :sectanchors:
 :sectlinks:
 
-[#v0.2.0]
+Change log of each release of the haminer software.
+The latest release log is put on the top.
+
+Legend,
+
+* 🪵: Breaking changes
+* 🌱: New feature
+* 🌼: Enhancement
+* 💧: Chores
+
+
+[#haminer_v0_3_0]
+==  haminer v0.3.0 (2025-12-29)
+
+**💧 Group documentation into _doc/ directory**.
+
+This is so we can serve the documentation under
+https://kilabit.info/project/haminer.
+
+In the Makefile, we add task `serve-doc` to preview the documentation.
+
+**💧 Replace module "share" with "pakakeh.go"**
+
+The "share" module has been renamed to "pakakeh.go" and moved to different
+git repository.
+
+**💧 Realign struct HttpLog and questdbClient**
+
+The HttpLog realign from 304 to 288 bytes.
+The questdbClient realign from 56 to 24 bytes.
+
+**🪵 Comply with all linters recommendations**
+
+Some of breaking changes,
+
+* Field [Config.HttpUrl] renamed to [Config.HTTPURL]
+* Field [ConfigForwarder.Url] renamed to [ConfigForwarder.URL]
+* Struct [HttpLog] renamed to [HTTPLog]
+
+**💧 _ops/haminer-test: setup container for development using mkosi**
+
+The container run HAProxy and PostgreSQL servers.
+
+We also create new dummy backend to test backend in HAProxy.
+The haminer-dummy-backend run in container and serve two ports in HTTP
+and TCP modes.
+
+**🌱 all: implement forwarder for Postgresql**
+
+The Postgresql forwarder accept single option "URL",
+
+  [forwarder "postgresql"]
+  url = postgres://<user>:<pass>@<host>/<database>?sslmode=<>
+
+The user and database must already created first, manually.
+
+**🌼 Do not log ServerName with invalid connection '<NOSRV>'**
+
+**🌼 _AUR: fix installation of binary in package function**
+
+**Add linter gocheck**
+
+Program gocheck implement go static analysis using [Analyzer] that are not
+included in the default go vet.
+See package [lib/goanalysis] for more information.
+
+[Analyzer]: https://pkg.go.dev/golang.org/x/tools/go/analysis#hdr-Analyzer +
+[lib/goanalysis]: https://pkg.go.dev/git.sr.ht/~shulhan/pakakeh.go/lib/goanalysis/
+
+**💧 Add missing SPDX license to all files**
+
+Convert the old ".reuse/dep5" format to REUSE.toml format using
+"reuse convert-dep5" command.
+
+For generated files, add the ".license" file.
+
+Using "reuse annotate ..." it automatically add empty line after
+"SPDX-FileCopyrightText:", and it also put "SPDX-FileCopyrightText" above
+the "SPDX-License-Identifier".
+
+Now, this project is compliant with version 3.3 of the REUSE
+Specification.**
+
+
+[#haminer_v0_2_0]
 ==  haminer v0.2.0 (2022-08-20)
 
 This release relicensing the software to GPLv3, add support for forwarding
@@ -16,10 +100,10 @@ logs to InfluxDB v2 and questdb [1].
 [1] https://questdb.io.
 
 
-[#v0.1.0]
+[#haminer_v0_1_0]
 ==  haminer v0.1.0
 
-=== Features
+Features,
 
 * Forwarding logs to InfluxDB
 * Preprocessing http URL for grouping in InfluxDB

@@ -75,7 +75,6 @@ $ make
 
 The binary name is `haminer` build in the current directory.
 
-
 ### Pre-build package
 
 The Arch Linux package is available at build.kilabit.info.
@@ -88,8 +87,7 @@ Server = https://build.kilabit.info/aur
 
 To install it,
 
-	$ sudo pacman -Sy --noconfirm haminer-git
-
+    $ sudo pacman -Sy --noconfirm haminer-git
 
 ## Configuration
 
@@ -100,11 +98,10 @@ See
 [haminer.conf](https://git.sr.ht/~shulhan/haminer/tree/main/item/cmd/haminer/haminer.conf)
 for an example of possible configuration and their explanation.
 
-
 ### Forwarders
 
 Currently, there are several database where haminer can forward the parsed
-log: Influxdb,  Questdb, and Postgresql.
+log: Influxdb, Questdb, and Postgresql.
 Haminer support Influxdb v1 and v2.
 
 #### Influxdb v1
@@ -179,7 +176,6 @@ The configuration only need the Data Source Name (DSN),
 url = postgres://<user>:<pass>@<host>/<database>?sslmode=<require|verify-full|verify-ca|disable>
 ```
 
-
 ## Deployment
 
 Copy configuration from `$SOURCE/cmd/haminer/haminer/conf` to
@@ -223,8 +219,7 @@ $ sudo systemctl enable haminer
 $ sudo systemctl start  haminer
 ```
 
-
-##  Development
+## Development
 
 <https://git.sr.ht/~shulhan/haminer>:: Link to the source code.
 
@@ -237,8 +232,7 @@ feedback, or request for new feature.
 [Changelog](https://kilabit.info/project/haminer/CHANGELOG.html):: History
 of each release.
 
-
-##  License
+## License
 
 Copyright (C) 2018-2025 M. Shulhan &lt;ms@kilabit.info&gt;
 
@@ -248,7 +242,7 @@ Foundation, either version 3 of the License, or any later version.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 details.
 
 You should have received a copy of the GNU General Public License along with

@@ -20,6 +20,9 @@ const (
 	envHostname = `HOSTNAME`
 )
 
+// Version of this module and program.
+var Version = `0.3.0`
+
 var (
 	_hostname string
 )
